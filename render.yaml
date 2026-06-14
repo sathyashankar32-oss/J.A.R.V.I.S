@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: jarvis
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PROVIDER
+        value: groq
+      - key: MODEL
+        value: llama-3.3-70b-versatile
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
