@@ -33,6 +33,16 @@ MODEL = os.getenv("MODEL", "").strip() or DEFAULT_MODELS.get(PROVIDER, "mock-1")
 OLLAMA_HOST    = os.getenv("OLLAMA_HOST",    "http://localhost:11434").rstrip("/")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
 
+# Ollama generation limits — set very high so big outputs (huge code, long docs)
+# are not truncated. num_predict = max tokens to generate; num_ctx = context window.
+# Bound by what the chosen model actually supports. Raise further in .env if needed.
+OLLAMA_MAX_TOKENS = int(os.getenv("OLLAMA_MAX_TOKENS", "32768"))
+OLLAMA_NUM_CTX    = int(os.getenv("OLLAMA_NUM_CTX",    "32768"))
+
+# Admin mode
+ADMIN_PASSWORD     = os.getenv("ADMIN_PASSWORD", "jarvis").strip()
+JARVIS_PERSONALITY = os.getenv("JARVIS_PERSONALITY", "").strip()
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
 
@@ -49,6 +59,17 @@ RESEARCH_MAX_SOURCES = int(os.getenv("RESEARCH_MAX_SOURCES", "8"))
 
 # --- Image tool settings (Pollinations is free and needs no key) ---
 IMAGE_BASE_URL = os.getenv("IMAGE_BASE_URL", "https://image.pollinations.ai/prompt").rstrip("/")
+
+# --- Coding agent workspace (the only folder the agent may read/write) ---
+# Point this at the project you want JARVIS to edit. Defaults to a sandbox
+# folder inside the app so nothing outside it can be touched by accident.
+AGENT_WORKSPACE = os.getenv("AGENT_WORKSPACE", "").strip() or str(
+    Path(__file__).resolve().parent.parent / "workspace"
+)
+
+# --- Canva Connect API (optional; needed only for the Canva agent) ---
+CANVA_API_TOKEN = os.getenv("CANVA_API_TOKEN", "").strip()
+CANVA_API_BASE  = os.getenv("CANVA_API_BASE", "https://api.canva.com/rest").rstrip("/")
 
 
 def summary() -> dict:
@@ -71,9 +92,13 @@ def persist():
     _ENV_PATH.touch(exist_ok=True)
     set_key(str(_ENV_PATH), "PROVIDER",      PROVIDER)
     set_key(str(_ENV_PATH), "MODEL",         MODEL)
-    set_key(str(_ENV_PATH), "OLLAMA_HOST",    OLLAMA_HOST)
-    set_key(str(_ENV_PATH), "OLLAMA_API_KEY", OLLAMA_API_KEY)
+    set_key(str(_ENV_PATH), "OLLAMA_HOST",         OLLAMA_HOST)
+    set_key(str(_ENV_PATH), "OLLAMA_API_KEY",      OLLAMA_API_KEY)
+    set_key(str(_ENV_PATH), "ADMIN_PASSWORD",      ADMIN_PASSWORD)
+    set_key(str(_ENV_PATH), "JARVIS_PERSONALITY",  JARVIS_PERSONALITY)
     set_key(str(_ENV_PATH), "GROQ_API_KEY",  GROQ_API_KEY)
     set_key(str(_ENV_PATH), "GEMINI_API_KEY",GEMINI_API_KEY)
     set_key(str(_ENV_PATH), "OPENAI_API_KEY",OPENAI_API_KEY)
     set_key(str(_ENV_PATH), "OPENAI_BASE_URL",OPENAI_BASE_URL)
+    set_key(str(_ENV_PATH), "AGENT_WORKSPACE", AGENT_WORKSPACE)
+    set_key(str(_ENV_PATH), "CANVA_API_TOKEN", CANVA_API_TOKEN)

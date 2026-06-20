@@ -80,11 +80,23 @@ class OllamaProvider:
     name = "ollama"
 
     async def stream(self, messages, system=None, temperature=0.7, max_tokens=1024):
+        # Lift the cap for real generations (large code, long docs) while keeping
+        # short utility calls (routing, titles, prompt-refine) small so they stay fast.
+        # Clamp to a workable ceiling. Absurd values (e.g. a million) can't be
+        # allocated by any model and make the request hang or fail outright.
+        _CTX_CEILING = 131072
+        num_predict = max(max_tokens, config.OLLAMA_MAX_TOKENS) if (max_tokens and max_tokens > 256) else max_tokens
+        num_ctx = min(config.OLLAMA_NUM_CTX, _CTX_CEILING)
+        num_predict = min(num_predict, num_ctx)  # output can't exceed the context
         payload = {
             "model": config.MODEL,
             "messages": _with_system(messages, system),
             "stream": True,
-            "options": {"temperature": temperature, "num_predict": max_tokens},
+            "options": {
+                "temperature": temperature,
+                "num_predict": num_predict,
+                "num_ctx": num_ctx,
+            },
         }
         url = f"{config.OLLAMA_HOST}/api/chat"
         headers = {}

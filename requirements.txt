@@ -4,3 +4,4 @@ httpx>=0.27
 python-dotenv>=1.0
 ddgs>=6.0
 trafilatura>=1.8
+openpyxl>=3.1

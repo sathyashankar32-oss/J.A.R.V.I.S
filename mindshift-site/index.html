@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindshift - Redefine Your Mindset</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2a5a6a;
+            --secondary: #a8e6cf;
+            --accent: #dcedc1;
+            --light: #f8f9fa;
+            --dark: #333;
+            --text: #444;
+            --body-font: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--body-font);
+            background-color: var(--light);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--body-font);
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .logo span {
+            color: var(--secondary);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        nav a:hover {
+            color: var(--secondary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        /* Back Button */
+        .back-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: var(--body-font);
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-button:hover {
+            background: #1e424f;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+            border-radius: 0 0 30px 30px;
+            margin-bottom: 60px;
+        }
+
+        .hero h1 {
+            font-family: var(--body-font);
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2em;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cta-button:hover {
+            background: #1e424f;
+            transform: translateY(-2px);
+        }
+
+        /* Vision Board Preview */
+        .vision-board-preview {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-canvas {
+            height: 400px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin-bottom: 20px;
+        }
+
+        .preview-element {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .preview-cta {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-cta:hover {
+            background: #1e424f;
+        }
+
+        /* Marquee for affirmations */
+        .affirmation-marquee {
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+            padding: 12px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            margin-top: 40px;
+            border-radius: 10px;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Articles Section */
+        .section-title {
+            text-align: center;
+            font-family: var(--body-font);
+            color: var(--primary);
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            position: relative;
+            font-weight: 700;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .article-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: pointer;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .article-icon {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: white;
+        }
+
+        .article-content {
+            padding: 25px;
+        }
+
+        .article-card h3 {
+            font-family: var(--body-font);
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .article-card p {
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+
+        .read-more {
+            color: var(--secondary);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Newsletter Subscription */
+        .newsletter-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .newsletter-title {
+            font-family: var(--body-font);
+            color: var(--primary);
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .newsletter-subtitle {
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+
+        .newsletter-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .newsletter-input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: var(--body-font);
+            font-size: 1em;
+        }
+
+        .newsletter-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: var(--body-font);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .newsletter-button:hover {
+            background: #1e424f;
+        }
+
+        /* AI Chat Interface */
+        .ai-chat-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin: 40px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .ai-chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .ai-chat-header h2 {
+            font-family: var(--body-font);
+            font-size: 1.5em;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .ai-chat-header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin: 5px 0 0;
+        }
+
+        .ai-chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+
+        .ai-chat-input-area {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: white;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .ai-chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ai-chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-family: var(--body-font);
+            font-size: 1em;
+            outline: none;
+        }
+
+        .ai-chat-input:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 2px rgba(168, 230, 207, 0.2);
+        }
+
+        .ai-chat-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+        }
+
+        .ai-chat-send:hover {
+            background: #1e424f;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            font-family: var(--body-font);
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .user-message {
+            background: var(--primary);
+            color: white;
+            margin-left: auto;
+            border-radius: 18px 18px 0 18px;
+        }
+
+        .bot-message {
+            background: #f0f8ff;
+            color: var(--dark);
+            border-radius: 18px 18px 18px 0;
+        }
+
+        .bot-typing {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            opacity: 0;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.2;
+            }
+            20% {
+                opacity: 1;
+            }
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 50px 0 20px;
+            border-radius: 20px 20px 0 0;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            font-family: var(--body-font);
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .footer-section a:hover {
+            color: var(--secondary);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            nav ul {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .hero h1 {
+                font-size: 2em;
+            }
+
+            .article-title {
+                font-size: 2em;
+            }
+
+            .section-title {
+                font-size: 1.5em;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .vision-board-preview {
+                margin: 20px 0;
+            }
+
+            .newsletter-form {
+                width: 100%;
+            }
+
+            .ai-chat-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="nav-container">
+                <a href="#" class="logo" onclick="loadPage('home'); return false;">Mind<span>shift</span></a>
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <nav>
+                    <ul class="nav-links" id="nav-links">
+                        <li><a href="#" onclick="loadPage('home'); return false;">Home</a></li>
+                        <li><a href="#" onclick="loadPage('articles'); return false;">Articles</a></li>
+                        <li><a href="#" onclick="loadPage('about'); return false;">About</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <!-- Home Page Content -->
+        <div id="home-page">
+            <section class="hero">
+                <div class="container">
+                    <h1>Redefine Your Mindset</h1>
+                    <p>Transform your dreams into reality with our science-backed tools for visualization, manifestation, and personal growth. Your future starts with a single thought.</p>
+                    <button class="cta-button" onclick="loadPage('articles')">Explore Articles</button>
+                </div>
+            </section>
+
+            <!-- Vision Board Preview -->
+            <div class="container">
+                <div class="vision-board-preview">
+                    <div class="preview-canvas" id="preview-canvas">
+                        <!-- Vision board elements -->
+                        <div class="preview-element" style="top: 30px; left: 50px; background: linear-gradient(45deg, #ff9a9e, #fad0c4); color: white; padding: 12px 18px; border-radius: 20px; font-weight: 600; transform: rotate(-5deg);">A+ Student</div>
+
+                        <div class="preview-element" style="top: 120px; left: 200px; width: 100px; height: 100px; background: linear-gradient(45deg, #a1c4fd, #c2e9fb); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2em;">📚</div>
+
+                        <div class="preview-element" style="top: 200px; left: 50px; background: linear-gradient(45deg, #c33764, #1d2671); color: white; padding: 10px 15px; border-radius: 10px; font-size: 0.9em;">Stay Focused</div>
+
+                        <div class="preview-element" style="top: 80px; left: 350px; width: 120px; height: 80px; background: linear-gradient(45deg, #00b4db, #0083b0); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; border-radius: 10px;">Mental Health Matters</div>
+
+                        <div class="preview-element" style="top: 250px; left: 250px; background: linear-gradient(45deg, #f7971e, #ffd200); color: #333; padding: 10px 15px; border-radius: 15px; font-weight: 600;">Self-Care First</div>
+
+                        <div class="preview-element" style="top: 180px; left: 400px; width: 80px; height: 80px; background: linear-gradient(45deg, #2c3e50, #fd746c); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">🧠</div>
+
+                        <div class="preview-element" style="top: 300px; left: 300px; background: linear-gradient(45deg, #0099f7, #f11712); color: white; padding: 8px 12px; border-radius: 10px; font-size: 0.8em; transform: rotate(3deg);">Progress > Perfection</div>
+
+                        <div class="preview-element" style="top: 50px; left: 450px; background: linear-gradient(45deg, #11998e, #38ef7d); color: white; padding: 10px 15px; border-radius: 15px;">Growth Mindset</div>
+                    </div>
+                    <button class="preview-cta" onclick="alert('This would open the full vision board editor')">
+                        <i class="fas fa-plus"></i> Make your own vision board!
+                    </button>
+                </div>
+            </div>
+
+            <section id="articles" class="articles">
+                <h2 class="section-title">Mindset Articles</h2>
+                <div class="articles-grid">
+                    <div class="article-card" onclick="loadArticle('vision-board-guide')">
+                        <div class="article-icon" style="background: #a8e6cf;">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Vision Board Like a Pro</h3>
+                            <p>Turn dreams into actionable goals with our step-by-step guide to creating vision boards that actually work.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('manifestation-guide')">
+                        <div class="article-icon" style="background: #dcedc1;">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Manifest Your Dreams</h3>
+                            <p>Science-backed techniques to bring your goals to life through the power of focused intention and action.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('journaling-guide')">
+                        <div class="article-icon" style="background: #ffd3b6;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Journaling for Clarity</h3>
+                            <p>Write your way to better mental health, focus, and self-discovery with our guided journaling techniques.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('study-techniques')">
+                        <div class="article-icon" style="background: #ffaaa5;">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Study Smarter, Not Harder</h3>
+                            <p>Proven techniques to boost your learning efficiency and retention without burning out.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('meditation-guide')">
+                        <div class="article-icon" style="background: #a2d2ff;">
+                            <i class="fas fa-lotus"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Meditation for Focus</h3>
+                            <p>5-minute routines to calm your mind, improve concentration, and reduce stress.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('productivity-guide')">
+                        <div class="article-icon" style="background: #b5eaea;">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Productivity Secrets</h3>
+                            <p>Beat procrastination and achieve more with less stress using these proven strategies.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Marquee with affirmations -->
+                <div class="affirmation-marquee">
+                    <div class="marquee-content">
+                        🌟 You are capable of amazing things! 🌟 Progress > Perfection 🌟 Believe in yourself 🌟 One step at a time 🌟 Your mindset creates your reality 🌟 Stay focused on your goals 🌟 You've got this!
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Assistant Section -->
+            <section class="ai-assistant">
+                <div class="container">
+                    <div class="ai-chat-container">
+                        <div class="ai-chat-header">
+                            <h2>Talk to Vera</h2>
+                            <p>Your mental health and academic support</p>
+                        </div>
+                        <div class="ai-chat-messages" id="chat-messages">
+                            <div class="bot-message chat-message">
+                                Hello! I'm Vera, your virtual mentor. I'm here to help with mental health support, study tips, or any questions you have. How can I assist you today?
+                            </div>
+                        </div>
+                        <div class="ai-chat-input-area">
+                            <div class="ai-chat-input-container">
+                                <input type="text" id="chat-input" class="ai-chat-input" placeholder="Type your message..." autocomplete="off">
+                                <button class="ai-chat-send" onclick="sendMessage()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <p style="font-size: 0.8em; color: #666; margin-top: 8px; text-align: center;">
+                                Press Enter to send · Vera offers support, not professional care. In a crisis, contact your local emergency services or a helpline.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Articles Page -->
+        <div id="articles-page" style="display: none;">
+            <div class="container">
+                <h2 class="section-title">All Articles</h2>
+                <div class="articles-grid">
+                    <div class="article-card" onclick="loadArticle('vision-board-guide')">
+                        <div class="article-icon" style="background: #a8e6cf;">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Vision Board Like a Pro</h3>
+                            <p>Turn dreams into actionable goals with our step-by-step guide to creating vision boards that actually work.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('manifestation-guide')">
+                        <div class="article-icon" style="background: #dcedc1;">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Manifest Your Dreams</h3>
+                            <p>Science-backed techniques to bring your goals to life through the power of focused intention and action.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('journaling-guide')">
+                        <div class="article-icon" style="background: #ffd3b6;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Journaling for Clarity</h3>
+                            <p>Write your way to better mental health, focus, and self-discovery with our guided journaling techniques.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('study-techniques')">
+                        <div class="article-icon" style="background: #ffaaa5;">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Study Smarter, Not Harder</h3>
+                            <p>Proven techniques to boost your learning efficiency and retention without burning out.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('meditation-guide')">
+                        <div class="article-icon" style="background: #a2d2ff;">
+                            <i class="fas fa-lotus"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Meditation for Focus</h3>
+                            <p>5-minute routines to calm your mind, improve concentration, and reduce stress.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="article-card" onclick="loadArticle('productivity-guide')">
+                        <div class="article-icon" style="background: #b5eaea;">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div class="article-content">
+                            <h3>Productivity Secrets</h3>
+                            <p>Beat procrastination and achieve more with less stress using these proven strategies.</p>
+                            <span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Marquee with affirmations -->
+                <div class="affirmation-marquee">
+                    <div class="marquee-content">
+                        🌟 You are capable of amazing things! 🌟 Progress > Perfection 🌟 Believe in yourself 🌟 One step at a time 🌟 Your mindset creates your reality 🌟 Stay focused on your goals 🌟 You've got this!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Page -->
+        <div id="about-page" style="display: none;">
+            <div class="container">
+                <h2 class="section-title">About Mindshift</h2>
+                <div class="article-page">
+                    <div class="article-header">
+                        <h1 class="article-title">Redefining Mental Health</h1>
+                        <p class="article-subtitle">Empowering students to transform their mindset and well-being</p>
+                    </div>
+
+                    <div class="about-section">
+                        <h2 class="section-title">Our Mission</h2>
+                        <p class="section-content">
+                            Mindshift is a revolutionary platform designed to support students in their mental health and personal growth journeys. We believe that every student deserves access to tools and resources that help them thrive both academically and emotionally.
+                        </p>
+                        <p class="section-content">
+                            Our mission is to create a safe, supportive space where students can explore their potential, overcome challenges, and develop resilience through science-backed techniques and community support.
+                        </p>
+                    </div>
+
+                    <div class="about-section">
+                        <h2 class="section-title">What We Offer</h2>
+
+                        <h3 style="color: var(--primary); font-weight: 700; margin: 25px 0 15px; font-size: 1.3em;">Vision Board Creator</h3>
+                        <p class="section-content">
+                            Our intuitive, drag-and-drop vision board editor helps you visualize your goals and dreams. Create beautiful, inspiring boards that keep you motivated and focused on what matters most to you.
+                        </p>
+                        <ul class="feature-list">
+                            <li>Thousands of images, icons, and templates</li>
+                            <li>Customizable layouts and color schemes</li>
+                            <li>Save and export your creations</li>
+                            <li>Set as wallpaper or print your boards</li>
+                        </ul>
+
+                        <h3 style="color: var(--primary); font-weight: 700; margin: 25px 0 15px; font-size: 1.3em;">Science-Backed Articles</h3>
+                        <p class="section-content">
+                            Explore our comprehensive library of articles covering topics from mental health to academic success. All content is researched and written by experts in their fields.
+                        </p>
+                        <ul class="feature-list">
+                            <li>Vision boarding techniques</li>
+                            <li>Manifestation strategies</li>
+                            <li>Journaling for mental clarity</li>
+                            <li>Effective study methods</li>
+                            <li>Meditation and mindfulness</li>
+                            <li>Productivity and time management</li>
+                        </ul>
+
+                        <h3 style="color: var(--primary); font-weight: 700; margin: 25px 0 15px; font-size: 1.3em;">Talk to Vera</h3>
+                        <p class="section-content">
+                            Vera, our AI mentor, is available to provide personalized support, answer questions, and offer guidance on mental health and academic challenges.
+                        </p>
+                        <ul class="feature-list">
+                            <li>Instant responses to your questions</li>
+                            <li>Personalized advice and resources</li>
+                            <li>Mental health support</li>
+                            <li>Study tips and techniques</li>
+                            <li>Motivation and encouragement</li>
+                        </ul>
+                    </div>
+
+                    <div class="quote">
+                        "The mind is everything. What you think you become." - Buddha
+                    </div>
+
+                    <div class="about-section">
+                        <h2 class="section-title">Our Approach</h2>
+                        <p class="section-content">
+                            Mindshift combines the latest research in neuroscience, psychology, and education to create tools that actually work. We believe in:
+                        </p>
+                        <ul class="feature-list">
+                            <li><strong>Science:</strong> Evidence-based techniques that produce real results</li>
+                            <li><strong>Accessibility:</strong> Free tools available to all students</li>
+                            <li><strong>Privacy:</strong> Your data is always protected</li>
+                            <li><strong>Community:</strong> A supportive network of peers</li>
+                            <li><strong>Empowerment:</strong> Helping you take charge of your well-being</li>
+                        </ul>
+                    </div>
+
+                    <div class="testimonials">
+                        <h2 class="testimonials-title">What Our Users Say</h2>
+                        <div class="testimonials-grid">
+                            <div class="testimonial-card">
+                                <p class="testimonial-text">
+                                    "Mindshift has completely changed how I approach my studies and mental health. The vision board helped me clarify my goals, and Vera's advice keeps me on track."
+                                </p>
+                                <p class="testimonial-author">- Alex, University Student</p>
+                            </div>
+                            <div class="testimonial-card">
+                                <p class="testimonial-text">
+                                    "I was skeptical at first, but the meditation guides and journaling prompts have really helped me manage my anxiety during exams. Highly recommend!"
+                                </p>
+                                <p class="testimonial-author">- Taylor, Graduate Student</p>
+                            </div>
+                            <div class="testimonial-card">
+                                <p class="testimonial-text">
+                                    "The study techniques from Mindshift helped me improve my grades while actually reducing my stress levels. It's been a game-changer."
+                                </p>
+                                <p class="testimonial-author">- Jordan, High School Student</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cta-section">
+                        <h2 class="cta-title">Join the Mindshift Community</h2>
+                        <p style="font-size: 1.1em;">Start your journey to better mental health and academic success today.</p>
+                        <button class="cta-button" onclick="loadPage('home')">Get Started Free</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Article Container -->
+    <div id="article-container" style="display: none;"></div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Mindshift</h3>
+                    <p>Empowering you to transform your mindset and create the life you desire through science-backed visualization and manifestation techniques.</p>
+                    <div class="newsletter-box" style="margin-top: 20px;">
+                        <h3 class="newsletter-title">Stay Inspired</h3>
+                        <p class="newsletter-subtitle">Subscribe to our monthly newsletter for exclusive content</p>
+                        <form class="newsletter-form" onsubmit="subscribeNewsletter(event)">
+                            <input type="email" class="newsletter-input" placeholder="Your email address" required>
+                            <button type="submit" class="newsletter-button">Subscribe</button>
+                            <p id="newsletter-msg" style="font-size: 0.85em; min-height: 18px; margin-top: 4px;"></p>
+                        </form>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#" onclick="loadPage('home'); return false;">Home</a></li>
+                        <li><a href="#" onclick="loadPage('articles'); return false;">Articles</a></li>
+                        <li><a href="#" onclick="loadPage('about'); return false;">About Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Connect with us on social media for daily inspiration</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ====== JARVIS backend (powers Vera + the newsletter) ======
+        // Replace this with your deployed JARVIS URL, e.g. "https://your-jarvis.onrender.com".
+        // Use "http://localhost:8000" only while testing on the same computer that runs JARVIS.
+        const JARVIS_SERVER = "https://YOUR-BACKEND-URL.onrender.com"; // <-- REPLACE with your deployed JARVIS URL
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.getElementById('nav-links');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Page navigation
+        function loadPage(page) {
+            // Hide all pages
+            document.querySelectorAll('#main-content > div').forEach(div => {
+                div.style.display = 'none';
+            });
+
+            // Show selected page
+            if (page === 'home') {
+                document.getElementById('home-page').style.display = 'block';
+            } else if (page === 'articles') {
+                document.getElementById('articles-page').style.display = 'block';
+            } else if (page === 'about') {
+                document.getElementById('about-page').style.display = 'block';
+            }
+
+            // Hide article container if visible
+            document.getElementById('article-container').style.display = 'none';
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Article content data
+        const articles = {
+            'vision-board-guide': {
+                title: "Vision Board Like a Pro",
+                subtitle: "Turn your dreams into visual goals",
+                content: `
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Why Vision Boards Work</h2>
+                        <p style="font-family: var(--body-font);">Science shows that visualizing goals activates the same neural pathways as actually achieving them. Your brain starts working on solutions before you even realize it!</p>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>Pro Tip:</strong> Place your board where you'll see it daily - above your desk, as your phone wallpaper, or even as a screensaver!
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Your Vision Board Toolkit</h2>
+                        <p style="font-family: var(--body-font);"><strong>Digital Option:</strong> Use our built-in editor or tools like Canva/Pinterest</p>
+                        <p style="font-family: var(--body-font);"><strong>Physical Option:</strong> Poster board, magazines, printouts, washi tape, your favorite pens</p>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Step-by-Step Guide</h2>
+                        <ol style="font-family: var(--body-font);">
+                            <li><strong>Set Your Intentions</strong> - What areas of life do you want to focus on?</li>
+                            <li><strong>Gather Inspiration</strong> - Collect images, quotes, and symbols</li>
+                            <li><strong>Organize Your Layout</strong> - Group similar themes together</li>
+                            <li><strong>Add Personal Touches</strong> - Include affirmations and photos</li>
+                            <li><strong>Display With Pride</strong> - Put it where you'll see it daily</li>
+                        </ol>
+                    </div>
+                    <div class="quote" style="font-style: italic; text-align: center; color: var(--primary); margin: 30px 0; font-family: var(--body-font); font-size: 1.2em; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 8px;">
+                        "What you focus on expands, and when you focus on the good in your life, you create more of it." - Oprah Winfrey
+                    </div>
+                `
+            },
+            'manifestation-guide': {
+                title: "Manifest Your Dreams",
+                subtitle: "Science-backed techniques to bring your goals to life",
+                content: `
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">The Science Behind Manifestation</h2>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>🔬 The Science:</strong> Your RAS filters information based on what you focus on.
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Manifestation Formula</h2>
+                        <h3 style="font-family: var(--body-font); font-weight: 700;">1. Get Clear</h3>
+                        <p style="font-family: var(--body-font);">Be specific about what you want.</p>
+                        <h3 style="font-family: var(--body-font); font-weight: 700;">2. Visualize Daily</h3>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>5-Minute Exercise:</strong>
+                            <ol style="font-family: var(--body-font);">
+                                <li>Close your eyes and picture your goal</li>
+                                <li>Engage all your senses</li>
+                                <li>Feel the emotions</li>
+                                <li>Write down insights</li>
+                            </ol>
+                        </div>
+                    </div>
+                `
+            },
+            'journaling-guide': {
+                title: "Journaling for Clarity",
+                subtitle: "Write your way to better mental health and focus",
+                content: `
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Why Journaling Works</h2>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>Science says:</strong> 15 minutes daily reduces stress and boosts memory!
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Journaling Styles</h2>
+                        <h3 style="font-family: var(--body-font); font-weight: 700;">Gratitude Journaling</h3>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>Prompt:</strong> "What are 3 small wins I had today?"
+                        </div>
+                    </div>
+                `
+            },
+            'study-techniques': {
+                title: "Study Smarter, Not Harder",
+                subtitle: "Proven techniques to boost your learning efficiency",
+                content: `
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">🍅 Pomodoro Technique</h2>
+                        <p style="font-family: var(--body-font);">Work in 25-minute sprints with 5-minute breaks.</p>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>Pro Tip:</strong> Use Focus Keeper or Forest app!
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">🔄 Active Recall</h2>
+                        <p style="font-family: var(--body-font);">Test yourself instead of passively rereading.</p>
+                    </div>
+                `
+            },
+            'meditation-guide': {
+                title: "Meditation for Focus",
+                subtitle: "5-minute routines to calm your mind",
+                content: `
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">Why Meditate?</h2>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>Benefits:</strong>
+                            <ul style="font-family: var(--body-font);">
+                                <li>✅ Reduces stress</li>
+                                <li>✅ Improves concentration</li>
+                                <li>✅ Enhances self-awareness</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">🕒 5-Minute Breathing</h2>
+                        <ol style="font-family: var(--body-font);">
+                            <li>Sit comfortably</li>
+                            <li>Inhale 4 counts</li>
+                            <li>Hold 4 counts</li>
+                            <li>Exhale 6 counts</li>
+                        </ol>
+                    </div>
+                `
+            },
+            'productivity-guide': {
+                title: "Productivity Secrets",
+                subtitle: "Beat procrastination and achieve more",
+                content: `
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">🎯 The 2-Minute Rule</h2>
+                        <p style="font-family: var(--body-font);">If a task takes less than 2 minutes, do it immediately.</p>
+                    </div>
+                    <div class="section">
+                        <h2 class="section-title" style="font-family: var(--body-font); font-weight: 700;">🍅 Eat That Frog</h2>
+                        <div class="tip-box" style="background: white; padding: 20px; border-left: 4px solid var(--secondary); margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <strong>Why it works:</strong> Tackle hardest task first for momentum.
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        // Function to load article content
+        function loadArticle(articleId) {
+            // Hide main content
+            document.getElementById('main-content').style.display = 'none';
+
+            // Get article content
+            const article = articles[articleId];
+            if (article) {
+                const articleHTML = `
+                    <div class="article-page">
+                        <button class="back-button" onclick="loadPage('home')">
+                            <i class="fas fa-arrow-left"></i> Back to Home
+                        </button>
+                        <div class="article-header">
+                            <h1 class="article-title" style="font-family: var(--body-font); font-weight: 700;">${article.title}</h1>
+                            <p class="article-subtitle" style="font-family: var(--body-font);">${article.subtitle}</p>
+                        </div>
+                        ${article.content}
+                    </div>
+                `;
+
+                document.getElementById('article-container').innerHTML = articleHTML;
+                document.getElementById('article-container').style.display = 'block';
+                document.getElementById('main-content').style.display = 'block';
+
+                // Scroll to top
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // AI Chat Functionality
+        function initAIChat() {
+            const chatInput = document.getElementById('chat-input');
+
+            // Allow sending with Enter key
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            // (Welcome message is already shown in the HTML above.)
+        }
+
+        // ---- Vera: real chat, streamed from your JARVIS /api/mentor ----
+        let veraHistory = [];
+        let veraStreaming = false;
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message || veraStreaming) return;
+
+            addChatMessage('user', message);
+            input.value = '';
+            veraStreaming = true;
+            showTypingIndicator();
+
+            const chatContainer = document.getElementById('chat-messages');
+            let raw = "", botDiv = null;
+
+            try {
+                const resp = await fetch(JARVIS_SERVER + "/api/mentor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message, history: veraHistory })
+                });
+                hideTypingIndicator();
+                if (!resp.ok || !resp.body) throw new Error("Request failed (" + resp.status + ")");
+
+                botDiv = document.createElement('div');
+                botDiv.className = 'bot-message chat-message';
+                chatContainer.appendChild(botDiv);
+
+                const reader = resp.body.getReader();
+                const dec = new TextDecoder();
+                let buf = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += dec.decode(value, { stream: true });
+                    let nl;
+                    while ((nl = buf.indexOf("\n")) >= 0) {
+                        const line = buf.slice(0, nl).trim();
+                        buf = buf.slice(nl + 1);
+                        if (!line) continue;
+                        try {
+                            const ev = JSON.parse(line);
+                            if (ev.type === "token") {
+                                raw += ev.text;
+                                botDiv.textContent = raw;
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }
+                        } catch (err) {}
+                    }
+                }
+            } catch (e) {
+                hideTypingIndicator();
+                if (!botDiv) {
+                    botDiv = document.createElement('div');
+                    botDiv.className = 'bot-message chat-message';
+                    chatContainer.appendChild(botDiv);
+                }
+                botDiv.textContent = "Sorry — I couldn't reach Vera just now. Please make sure the server is running and try again in a moment.";
+                raw = "";
+            }
+
+            veraHistory.push({ role: "user", content: message });
+            if (raw) veraHistory.push({ role: "assistant", content: raw });
+            if (veraHistory.length > 24) veraHistory = veraHistory.slice(-24);
+            veraStreaming = false;
+            input.focus();
+        }
+
+        // ---- Newsletter: real capture, posted to your JARVIS /api/subscribe ----
+        async function subscribeNewsletter(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value.trim();
+            const msg = document.getElementById('newsletter-msg');
+            msg.textContent = "Subscribing…"; msg.style.color = "#666";
+            try {
+                const r = await fetch(JARVIS_SERVER + "/api/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: email, source: "mindshift-newsletter" })
+                });
+                const d = await r.json();
+                if (d.ok) {
+                    msg.textContent = d.duplicate ? "You're already subscribed 🎉" : "✓ Subscribed! Thanks for joining.";
+                    msg.style.color = "#2a5a6a";
+                    form.reset();
+                } else {
+                    msg.textContent = "✗ " + (d.error || "Please check your email and try again.");
+                    msg.style.color = "#c0392b";
+                }
+            } catch (err) {
+                msg.textContent = "✗ Couldn't reach the server. Please try again later.";
+                msg.style.color = "#c0392b";
+            }
+        }
+
+        function addChatMessage(sender, message) {
+            const chatContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = sender + '-message chat-message';
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chatContainer = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'bot-typing';
+            typingDiv.innerHTML = `
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                Thinking...
+            `;
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.querySelector('.bot-typing');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPage('home');
+            initAIChat();
+        });
+    </script>
+</body>
+</html>

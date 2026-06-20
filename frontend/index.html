@@ -1,2476 +1,949 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>J.A.R.V.I.S</title>
-<link rel="icon" type="image/png" href="/static/jarvis-logo.png"/>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600&family=Share+Tech+Mono&display=swap');
+  :root {
+    --bg:#07090d; --panel:#0e1117; --sidebar:#0a0c11; --text:#e6edf3; --muted:#7d8694;
+    --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.16);
+    --neon:#38bdf8; --neon-deep:#0ea5e9; --glow:rgba(56,189,248,.35);
+    --admin:#ef4444; --admin-deep:#b91c1c;
+    --code-bg:#0b0e13; --user-bubble:#15202b;
+    --mono: ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --radius:12px;
+  }
+  * { box-sizing:border-box; }
+  html,body { height:100%; margin:0; }
+  body {
+    font-family:var(--sans); color:var(--text); background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(56,189,248,.10), transparent 60%),
+      var(--bg);
+    display:flex; font-size:15px; line-height:1.6;
+  }
+  ::-webkit-scrollbar{width:9px;height:9px} ::-webkit-scrollbar-thumb{background:#23303d;border-radius:6px}
 
-:root {
-  --bg:          #05030e;
-  --bg2:         #090515;
-  --sidebar:     #070310;
-  --panel:       #0f0820;
-  --panel2:      #160e2c;
-  --text:        #e2d4ff;
-  --text-dim:    #a88fc8;
-  --muted:       #5e4680;
-  --border:      rgba(138,78,255,0.16);
-  --border-glow: rgba(168,85,247,0.42);
-  --accent:      #a855f7;
-  --accent2:     #7c3aed;
-  --neon:        #c084fc;
-  --neon2:       #e879f9;
-  --cyan:        #67e8f9;
-  --green:       #4ade80;
-  --red:         #f87171;
-  --user-bubble: #180c30;
-  --code-bg:     #0c071e;
-  --mono:        'Share Tech Mono','Courier New',monospace;
-  --title:       'Orbitron',sans-serif;
-  --body:        'Rajdhani',sans-serif;
-  --radius:      10px;
-}
+  /* Sidebar */
+  .sidebar{ width:272px; flex-shrink:0; background:var(--sidebar); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:18px 14px; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 8px 14px; }
+  .brand img{ width:30px; height:30px; object-fit:contain; filter:drop-shadow(0 0 8px var(--glow)); }
+  .brand .mark{ font-family:var(--mono); font-size:16px; letter-spacing:.18em; color:#fff; }
+  .brand .tag{ font-size:9px; color:var(--neon); border:1px solid var(--border-strong); border-radius:20px; padding:1px 7px; letter-spacing:.12em; }
+  .new-chat{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:10px 12px; font-size:13px; color:var(--text); font-family:var(--mono); letter-spacing:.04em; transition:border-color .15s; }
+  .new-chat:hover{ border-color:var(--neon); }
+  .new-chat .plus{ color:var(--neon); font-weight:700; }
+  .section-label{ font-size:10px; text-transform:uppercase; letter-spacing:.16em; color:var(--muted); margin:22px 8px 8px; font-family:var(--mono); }
+  .agent-list{ display:flex; flex-direction:column; gap:3px; overflow-y:auto; flex:1; }
+  .agent{ padding:8px 10px; border-radius:8px; cursor:pointer; border:1px solid transparent; transition:.15s; }
+  .agent:hover{ background:#0f141b; }
+  .agent .name{ font-size:13px; font-weight:600; display:flex; align-items:center; gap:7px; font-family:var(--mono); }
+  .agent .dot{ width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px var(--glow); flex-shrink:0; }
+  .agent .desc{ font-size:11px; color:var(--muted); margin-top:2px; padding-left:14px; }
+  .agent.pinned{ background:#0c1820; border-color:var(--neon); }
+  .session-list{ max-height:26vh; overflow-y:auto; display:flex; flex-direction:column; gap:3px; margin-bottom:6px; }
+  .session-item{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 9px; border-radius:8px; cursor:pointer; border:1px solid transparent; font-size:12px; color:var(--text); }
+  .session-item:hover{ background:#0f141b; } .session-item.active{ background:#0c1820; border-color:var(--neon); }
+  .session-item .st{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .session-del{ background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:10px; opacity:.55; } .session-del:hover{ color:var(--admin); opacity:1; }
+  .session-empty{ font-size:11px; color:var(--muted); padding:4px 9px; font-family:var(--mono); }
+  .session-item.admin .st{ color:#f87171; } .session-item.admin{ border-color:#3f0000; }
+  .footer{ margin-top:10px; padding:10px; border-top:1px solid var(--border); font-size:11.5px; color:var(--muted); font-family:var(--mono); }
+  .footer b{ color:var(--text); font-weight:600; } .footer .free{ color:var(--neon); }
+  .admin-link{ margin-top:8px; width:100%; background:transparent; border:1px solid var(--admin-deep); color:#fca5a5;
+    border-radius:8px; padding:7px; font-family:var(--mono); font-size:10px; letter-spacing:.14em; cursor:pointer; }
+  .admin-link:hover{ background:#1a0606; }
 
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{font-family:var(--body);color:var(--text);background:var(--bg);display:flex;font-size:15px;line-height:1.6}
+  /* Main */
+  .main{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:10px 18px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--muted); }
+  .topbar .stat{ display:flex; align-items:center; gap:8px; }
+  #statusDot{ width:8px; height:8px; border-radius:50%; background:#374151; }
+  #statusDot.active{ background:var(--neon); box-shadow:0 0 8px var(--glow); }
+  .scroll{ flex:1; overflow-y:auto; }
+  .thread{ max-width:780px; margin:0 auto; padding:26px 24px 16px; }
 
-/* scanline */
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px)}
+  .welcome{ text-align:center; margin-top:9vh; }
+  .welcome img{ width:230px; height:auto; max-width:60%; object-fit:contain; filter:drop-shadow(0 0 34px var(--glow)); margin-bottom:10px; }
+  .welcome h1{ font-family:var(--mono); font-weight:500; font-size:23px; letter-spacing:.12em; margin:0 0 6px; }
+  .welcome p{ color:var(--muted); margin:0 0 24px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:640px; margin:0 auto; }
+  .chip{ background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 13px; font-size:13px; cursor:pointer; text-align:left; color:var(--text); transition:.15s; }
+  .chip:hover{ border-color:var(--neon); } .chip .k{ display:block; font-size:10px; color:var(--neon); margin-bottom:2px; letter-spacing:.08em; font-family:var(--mono); text-transform:uppercase; }
 
-/* scrollbar */
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px}
+  .msg{ margin-bottom:24px; }
+  .msg.user{ text-align:right; }
+  .msg.user .bubble{ background:var(--user-bubble); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; display:inline-block; max-width:100%; white-space:pre-wrap; text-align:left; }
+  .badge{ display:inline-flex; align-items:center; gap:6px; font-size:10.5px; color:var(--muted); margin-bottom:8px; border:1px solid var(--border); border-radius:20px; padding:2px 10px; background:var(--panel); font-family:var(--mono); letter-spacing:.06em; }
+  .badge .dot{ width:6px; height:6px; border-radius:50%; background:var(--neon); box-shadow:0 0 6px var(--glow); }
+  .badge b{ color:var(--neon); font-weight:600; }
+  details.trace{ background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px 12px; margin-bottom:12px; font-size:12.5px; }
+  details.trace summary{ cursor:pointer; color:var(--muted); font-family:var(--mono); letter-spacing:.06em; font-size:10px; }
+  .trace ul{ margin:8px 0 2px; padding-left:16px; color:var(--muted); } .trace li{ margin:3px 0; } .trace li .sub{ display:block; color:var(--text); }
+  .sources{ margin:4px 0 14px; font-size:12.5px; } .sources .head{ color:var(--muted); margin-bottom:5px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; }
+  .sources ol{ margin:0; padding-left:20px; } .sources a{ color:var(--neon); text-decoration:none; } .sources a:hover{ text-decoration:underline; }
+  .answer p{ margin:0 0 12px; } .answer h1,.answer h2,.answer h3{ font-family:var(--mono); font-weight:500; margin:18px 0 8px; line-height:1.3; }
+  .answer h1{ font-size:20px; } .answer h2{ font-size:17px; } .answer h3{ font-size:15px; }
+  .answer ul,.answer ol{ margin:0 0 12px; padding-left:22px; } .answer li{ margin:3px 0; } .answer a{ color:var(--neon); }
+  .answer code{ background:var(--code-bg); padding:1px 5px; border-radius:4px; font-family:var(--mono); font-size:12.5px; }
+  .answer pre{ background:var(--code-bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; overflow-x:auto; margin:0 0 12px; }
+  .answer pre code{ background:none; padding:0; } .answer img,.answer video{ max-width:100%; border-radius:10px; border:1px solid var(--border); margin-top:4px; }
+  .cursor{ display:inline-block; width:7px; height:15px; background:var(--neon); vertical-align:text-bottom; animation:blink 1s steps(2) infinite; }
+  @keyframes blink{ 50%{ opacity:0 } }
+  .dots span{ animation:bounce 1.2s infinite; display:inline-block; } .dots span:nth-child(2){ animation-delay:.15s } .dots span:nth-child(3){ animation-delay:.3s }
+  @keyframes bounce{ 0%,60%,100%{ transform:translateY(0); opacity:.4 } 30%{ transform:translateY(-4px); opacity:1 } }
 
-/* ═══════════════ SIDEBAR ═══════════════ */
-.sidebar{
-  width:268px;flex-shrink:0;background:var(--sidebar);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  overflow:hidden;position:relative;
-}
-.sidebar::before{content:'';position:absolute;top:-80px;left:-80px;width:260px;height:260px;
-  background:radial-gradient(circle,rgba(124,58,237,0.12) 0%,transparent 65%);pointer-events:none}
+  .composer-wrap{ border-top:1px solid var(--border); background:transparent; }
+  .composer{ max-width:780px; margin:0 auto; padding:14px 24px 18px; }
+  .composer .box{ display:flex; align-items:flex-end; gap:8px; background:var(--panel); border:1px solid var(--border-strong); border-radius:14px; padding:8px 8px 8px 14px; transition:border-color .15s; }
+  .composer .box:focus-within{ border-color:var(--neon); }
+  textarea{ flex:1; border:none; outline:none; resize:none; background:transparent; font-family:var(--sans); font-size:15px; line-height:1.5; color:var(--text); max-height:200px; padding:5px 0; }
+  .iconbtn{ width:34px; height:34px; border-radius:9px; border:1px solid var(--border); cursor:pointer; background:#0c1118; color:var(--muted); font-size:15px; flex-shrink:0; display:grid; place-items:center; transition:.15s; }
+  .iconbtn:hover{ border-color:var(--neon); color:var(--neon); }
+  .iconbtn.on{ background:var(--neon); color:#001018; border-color:var(--neon); box-shadow:0 0 12px var(--glow); }
+  .send{ width:34px; height:34px; border-radius:9px; border:none; cursor:pointer; background:var(--neon); color:#001018; font-size:17px; flex-shrink:0; display:grid; place-items:center; }
+  .send:disabled{ opacity:.4; cursor:default; }
+  .hint{ text-align:center; font-size:11px; color:var(--muted); margin-top:8px; font-family:var(--mono); letter-spacing:.04em; }
+  .hint code{ background:var(--code-bg); padding:1px 5px; border-radius:4px; color:var(--neon); }
+  @media (max-width:760px){ .sidebar{ display:none } .thread,.composer{ padding-left:16px; padding-right:16px } }
 
-/* Brand */
-.brand{padding:18px 14px 14px;border-bottom:1px solid var(--border)}
-.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.brand-icon{width:34px;height:34px;border-radius:8px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));
-  display:grid;place-items:center;
-  font-family:var(--title);font-size:13px;font-weight:900;color:#fff;
-  box-shadow:0 0 16px rgba(168,85,247,0.55)}
-.brand-name{font-family:var(--title);font-size:13.5px;font-weight:700;letter-spacing:0.14em;
-  color:var(--neon);text-shadow:0 0 14px rgba(192,132,252,0.65)}
-.brand-sub{font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:0.07em;padding-left:44px}
-
-/* New session btn */
-.sidebar-body{flex:1;overflow-y:auto;padding:10px 10px 0;display:flex;flex-direction:column;gap:0}
-.new-sess-btn{
-  display:flex;align-items:center;gap:8px;width:100%;cursor:pointer;
-  background:transparent;border:1px solid var(--border-glow);border-radius:var(--radius);
-  padding:8px 12px;margin-bottom:8px;
-  font-family:var(--body);font-size:13px;color:var(--neon);letter-spacing:0.04em;
-  transition:all .2s;position:relative;overflow:hidden
-}
-.new-sess-btn::before{content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(232,121,249,0.05));opacity:0;transition:opacity .2s}
-.new-sess-btn:hover{border-color:var(--neon);box-shadow:0 0 14px rgba(192,132,252,0.2)}
-.new-sess-btn:hover::before{opacity:1}
-.new-sess-btn .plus{width:18px;height:18px;border-radius:4px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));
-  display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;
-  box-shadow:0 0 8px rgba(168,85,247,0.45)}
-
-/* Section label */
-.s-label{font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
-  color:var(--muted);margin:10px 4px 6px;display:flex;align-items:center;gap:6px;cursor:pointer;
-  user-select:none}
-.s-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
-.s-label .chevron{font-size:8px;transition:transform .2s;color:var(--accent)}
-.s-label.open .chevron{transform:rotate(90deg)}
-
-/* Sessions */
-.sessions-list{display:flex;flex-direction:column;gap:2px;max-height:170px;overflow-y:auto;margin-bottom:4px}
-.sess-item{
-  padding:7px 10px 7px 10px;border-radius:8px;cursor:pointer;
-  border:1px solid transparent;display:flex;align-items:flex-start;gap:6px;
-  transition:all .15s;position:relative
-}
-.sess-item:hover{background:rgba(124,58,237,0.08);border-color:var(--border)}
-.sess-item.active{background:rgba(124,58,237,0.13);border-color:rgba(168,85,247,0.3)}
-.sess-meta{flex:1;min-width:0}
-.sess-name{font-size:12px;font-weight:500;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sess-item.active .sess-name{color:var(--neon)}
-.sess-date{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:1px}
-.sess-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;
-  padding:0 2px;line-height:1;flex-shrink:0;opacity:0;transition:opacity .15s;align-self:center}
-.sess-item:hover .sess-del{opacity:1}
-.sess-del:hover{color:var(--red)}
-.no-sess{font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 4px;letter-spacing:0.05em}
-
-/* Agents — read-only by default; pin icon reveals on hover for override */
-.agent-list{display:flex;flex-direction:column;gap:2px;margin-bottom:4px}
-.agent{
-  padding:8px 10px;border-radius:8px;
-  border:1px solid transparent;display:flex;align-items:flex-start;gap:8px;
-  transition:all .15s;position:relative
-}
-/* hover shows the override option but doesn't look like a nav item */
-.agent:hover{background:rgba(124,58,237,0.05);border-color:var(--border)}
-/* "routed-to" highlight — set by JS when JARVIS picks this agent */
-.agent.routed{background:rgba(124,58,237,0.13);border-color:rgba(168,85,247,0.32)}
-/* explicit user override — distinct colour so it reads as "you changed this" */
-.agent.pinned{
-  border-color:rgba(232,121,249,0.5)!important;
-  background:rgba(232,121,249,0.06)!important;
-  box-shadow:inset 0 0 20px rgba(232,121,249,0.04)
-}
-.agent-left{flex-shrink:0;padding-top:3px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
-.agent.routed .dot{background:var(--neon);box-shadow:0 0 7px var(--neon)}
-.agent.pinned .dot{background:var(--neon2);box-shadow:0 0 7px var(--neon2)}
-.agent-info{flex:1;min-width:0}
-.agent-name-row{display:flex;align-items:center;gap:6px}
-.agent .name{font-size:13px;font-weight:600;letter-spacing:0.04em;color:var(--text-dim)}
-.agent.routed .name{color:var(--neon)}
-.agent.pinned .name{color:var(--neon2)}
-/* pin / unpin affordance — appears on hover, invisible otherwise */
-.pin-btn{
-  position:absolute;right:8px;top:50%;transform:translateY(-50%);
-  background:none;border:1px solid var(--border);border-radius:5px;
-  font-family:var(--mono);font-size:8.5px;color:var(--muted);
-  padding:2px 6px;cursor:pointer;letter-spacing:0.06em;
-  opacity:0;transition:opacity .15s,border-color .15s,color .15s;white-space:nowrap
-}
-.agent:hover .pin-btn{opacity:1}
-.agent.pinned .pin-btn{opacity:1;color:var(--neon2);border-color:rgba(232,121,249,0.45)}
-.pin-btn:hover{border-color:var(--neon2)!important;color:var(--neon2)!important}
-.override-badge{
-  font-family:var(--mono);font-size:7.5px;color:var(--neon2);
-  background:rgba(232,121,249,0.1);border:1px solid rgba(232,121,249,0.3);
-  border-radius:10px;padding:0 5px;letter-spacing:0.06em
-}
-.agent .desc{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4;padding-right:28px}
-
-/* Select mode — multi-agent */
-.select-mode-btn{
-  background:none;border:1px solid var(--border);border-radius:4px;
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  padding:2px 7px;cursor:pointer;letter-spacing:0.08em;
-  transition:all .15s;white-space:nowrap;flex-shrink:0
-}
-.select-mode-btn:hover{border-color:var(--neon);color:var(--neon)}
-.select-mode-btn.active{
-  border-color:var(--green);color:var(--green);
-  background:rgba(74,222,128,0.07)
-}
-/* agent in select mode */
-.agent.selectable{cursor:pointer}
-.agent.selectable:hover{background:rgba(74,222,128,0.05);border-color:rgba(74,222,128,0.25)}
-.agent.sel-checked{
-  border-color:rgba(74,222,128,0.5)!important;
-  background:rgba(74,222,128,0.08)!important;
-}
-.agent.sel-checked .name{color:var(--green)!important}
-.agent-cb{
-  width:14px;height:14px;border:1px solid var(--border);border-radius:3px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:9px;color:var(--green);transition:all .15s;flex-shrink:0
-}
-.agent.sel-checked .agent-cb{background:rgba(74,222,128,0.15);border-color:var(--green)}
-.sel-badge{
-  font-family:var(--mono);font-size:7.5px;color:var(--green);
-  background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);
-  border-radius:10px;padding:0 5px;letter-spacing:0.06em
-}
-.multi-select-bar{
-  display:none;align-items:center;justify-content:space-between;
-  padding:3px 4px 5px;font-family:var(--mono);font-size:8.5px;color:var(--green)
-}
-.multi-select-bar.visible{display:flex}
-.multi-clear-btn{
-  background:none;border:none;color:var(--muted);cursor:pointer;
-  font-family:var(--mono);font-size:8px;letter-spacing:0.05em;padding:0
-}
-.multi-clear-btn:hover{color:var(--red)}
-/* agent_section divider in chat */
-.agent-divider{
-  display:flex;align-items:center;gap:8px;margin:18px 0 10px;
-  font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--neon)
-}
-.agent-divider::before,.agent-divider::after{
-  content:'';flex:1;height:1px;background:rgba(168,85,247,0.25)
-}
-
-/* Provider panel */
-.provider-section{margin-top:auto;border-top:1px solid var(--border)}
-.provider-panel{padding:10px 10px 12px;display:flex;flex-direction:column;gap:7px}
-select,input[type=text],input[type=password]{
-  width:100%;background:var(--panel);border:1px solid var(--border);border-radius:6px;
-  padding:6px 9px;font-family:var(--mono);font-size:11px;color:var(--text);
-  outline:none;transition:border-color .2s
-}
-select:focus,input:focus{border-color:var(--border-glow)}
-select option{background:var(--bg2);color:var(--text)}
-.apply-btn{
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));border:none;border-radius:6px;
-  padding:7px;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:#fff;cursor:pointer;
-  transition:all .2s;box-shadow:0 0 12px rgba(168,85,247,0.35)
-}
-.apply-btn:hover{box-shadow:0 0 20px rgba(232,121,249,0.5);transform:translateY(-1px)}
-.field-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;margin-bottom:-3px}
-.apply-msg{font-family:var(--mono);font-size:10px;color:var(--green);text-align:center;
-  min-height:14px;letter-spacing:0.05em}
-
-/* Footer */
-.footer{padding:10px 14px 14px;font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.8}
-.footer b{color:var(--text-dim);font-weight:400}
-.free{color:var(--green)}
-.needs-key{color:var(--red)}
-
-/* ═══════════════ MAIN ═══════════════ */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
-
-/* animated grid bg */
-.main::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background-image:linear-gradient(rgba(124,58,237,0.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(124,58,237,0.035) 1px,transparent 1px);
-  background-size:44px 44px;
-  mask-image:radial-gradient(ellipse at 50% 0%,black 15%,transparent 68%)}
-
-/* Top bar */
-.top-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 20px 10px;border-bottom:1px solid var(--border);
-  position:relative;flex-shrink:0;
-  background:linear-gradient(180deg,rgba(124,58,237,0.04),transparent)
-}
-.session-title{
-  font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:0.1em;
-  text-transform:uppercase;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
-}
-.top-right{display:flex;align-items:center;gap:14px}
-
-/* Incognito badge */
-.incog-badge{
-  display:none;align-items:center;gap:6px;
-  font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--cyan);
-  border:1px solid rgba(103,232,249,0.3);border-radius:20px;padding:3px 10px;
-  background:rgba(103,232,249,0.05);
-  animation:incog-pulse 2s infinite
-}
-.incog-badge.visible{display:flex}
-@keyframes incog-pulse{0%,100%{border-color:rgba(103,232,249,0.3)}50%{border-color:rgba(103,232,249,0.7)}}
-.incog-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
-
-/* ── GHOST BUTTON ── */
-.ghost-btn{
-  background:none;border:none;cursor:pointer;padding:4px;
-  position:relative;display:flex;align-items:center;justify-content:center;
-  outline:none
-}
-.ghost-svg{
-  width:36px;height:46px;
-  /* transform & filter driven entirely by JS proximity tracker — no CSS animation */
-  will-change:transform,filter
-}
-.ghost-btn.incognito .ghost-svg{
-  /* incognito tint — base filter overridden by JS but tint preserved via data attr */
-}
-.ghost-body{fill:rgba(192,132,252,0.1);stroke:rgba(192,132,252,0.6);stroke-width:1.4;transition:all .3s}
-.ghost-crown{fill:rgba(232,121,249,0.15);stroke:rgba(232,121,249,0.7);stroke-width:1.2}
-.ghost-eye{fill:rgba(10,5,25,0.8);stroke:rgba(192,132,252,0.4);stroke-width:0.6}
-.ghost-btn.incognito .ghost-body{stroke:rgba(103,232,249,0.75);fill:rgba(103,232,249,0.07)}
-.ghost-btn.incognito .ghost-crown{stroke:rgba(103,232,249,0.8);fill:rgba(103,232,249,0.1)}
-
-/* ghost sparkles */
-.ghost-btn::before,.ghost-btn::after{
-  content:'✦';position:absolute;font-size:8px;color:var(--neon2);
-  opacity:0;transition:opacity .3s;pointer-events:none
-}
-.ghost-btn::before{top:0;right:-2px;animation:sparkle1 2.4s ease-in-out infinite}
-.ghost-btn::after{bottom:4px;left:-2px;animation:sparkle2 2.4s ease-in-out 1.2s infinite}
-@keyframes sparkle1{0%,100%{opacity:0;transform:translateY(0) scale(0.6)}50%{opacity:0.7;transform:translateY(-4px) scale(1)}}
-@keyframes sparkle2{0%,100%{opacity:0;transform:translateY(0) scale(0.6)}50%{opacity:0.5;transform:translateY(3px) scale(1)}}
-
-/* ─── Scroll / thread ─── */
-.scroll{flex:1;overflow-y:auto;position:relative}
-.thread{max-width:800px;margin:0 auto;padding:28px 28px 16px}
-
-/* Welcome */
-.welcome{text-align:center;margin-top:9vh}
-.welcome-icon{
-  width:140px;height:140px;margin:0 auto 24px;border-radius:50%;
-  display:grid;place-items:center;position:relative;
-  background:radial-gradient(circle at center,#1a0840 0%,#05030e 70%);
-  box-shadow:0 0 60px rgba(124,58,237,0.45),0 0 120px rgba(124,58,237,0.15),inset 0 0 40px rgba(124,58,237,0.1);
-  border:1px solid rgba(168,85,247,0.3);
-  animation:icon-breathe 4s ease-in-out infinite
-}
-.welcome-icon img{
-  width:110px;height:110px;object-fit:contain;border-radius:50%;
-  filter:drop-shadow(0 0 14px rgba(192,132,252,0.7)) drop-shadow(0 0 28px rgba(124,58,237,0.5))
-         brightness(1.05) saturate(1.1);
-  mix-blend-mode:screen
-}
-@keyframes icon-breathe{
-  0%,100%{box-shadow:0 0 60px rgba(124,58,237,0.45),0 0 120px rgba(124,58,237,0.15),inset 0 0 40px rgba(124,58,237,0.1)}
-  50%{box-shadow:0 0 80px rgba(168,85,247,0.65),0 0 160px rgba(124,58,237,0.25),inset 0 0 50px rgba(168,85,247,0.15)}
-}
-.welcome h1{
-  font-family:var(--title);font-weight:700;font-size:26px;letter-spacing:0.1em;
-  margin-bottom:6px;
-  background:linear-gradient(90deg,var(--neon),var(--neon2),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 24px rgba(192,132,252,0.4))
-}
-.welcome p{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:0.06em;margin-bottom:28px}
-.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:660px;margin:0 auto}
-.chip{
-  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
-  padding:10px 14px;font-size:12.5px;cursor:pointer;text-align:left;color:var(--text-dim);
-  font-family:var(--body);transition:all .2s;position:relative;overflow:hidden
-}
-.chip::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,0.1),transparent);opacity:0;transition:opacity .2s}
-.chip:hover{border-color:var(--border-glow);color:var(--text);box-shadow:0 0 18px rgba(124,58,237,0.18);transform:translateY(-1px)}
-.chip:hover::before{opacity:1}
-.chip .k{display:block;font-family:var(--mono);font-size:9.5px;color:var(--neon);margin-bottom:3px;letter-spacing:0.07em}
-
-/* Messages */
-.msg{margin-bottom:26px}
-.msg.user .bubble{
-  background:var(--user-bubble);border:1px solid rgba(168,85,247,0.18);
-  border-radius:var(--radius);padding:11px 15px;display:inline-block;max-width:88%;
-  white-space:pre-wrap;font-size:14.5px;box-shadow:0 0 22px rgba(124,58,237,0.08)
-}
-.msg.user{text-align:right}
-.badge{
-  display:inline-flex;align-items:center;gap:7px;
-  font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:10px;
-  border:1px solid var(--border);border-radius:20px;padding:3px 12px;
-  background:var(--panel);letter-spacing:0.06em
-}
-.badge .dot{background:var(--accent);box-shadow:0 0 6px var(--accent)}
-.badge b{color:var(--neon);font-weight:500}
-details.trace{
-  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
-  padding:10px 14px;margin-bottom:12px;font-size:12px;font-family:var(--mono)
-}
-details.trace summary{cursor:pointer;color:var(--muted);letter-spacing:0.06em;list-style:none;display:flex;align-items:center;gap:8px}
-details.trace summary::before{content:'▶';font-size:8px;color:var(--accent);transition:transform .2s}
-details[open].trace summary::before{transform:rotate(90deg)}
-.trace ul{margin:10px 0 2px;padding-left:16px;color:var(--muted)}
-.trace li{margin:4px 0}
-.trace li .sub{display:block;color:var(--text-dim);padding-left:8px}
-.sources{margin:4px 0 14px;font-size:12px;font-family:var(--mono)}
-.sources .head{color:var(--neon);margin-bottom:6px;font-size:9.5px;text-transform:uppercase;letter-spacing:0.1em}
-.sources ol{margin:0;padding-left:18px;color:var(--text-dim)}
-.sources a{color:var(--accent);text-decoration:none}
-.sources a:hover{color:var(--neon)}
-.answer{font-family:var(--body);font-size:15px}
-.answer p{margin:0 0 12px}
-.answer h1,.answer h2,.answer h3{font-family:var(--title);font-weight:600;color:var(--neon);margin:20px 0 8px;line-height:1.3;letter-spacing:0.05em}
-.answer h1{font-size:20px}.answer h2{font-size:17px}.answer h3{font-size:15px}
-.answer ul,.answer ol{margin:0 0 12px;padding-left:22px}
-.answer li{margin:4px 0}
-.answer a{color:var(--accent)}.answer a:hover{color:var(--neon)}
-.answer code{background:var(--code-bg);padding:1px 6px;border-radius:4px;font-family:var(--mono);font-size:12.5px;color:var(--cyan);border:1px solid rgba(103,232,249,0.13)}
-.answer pre{background:var(--code-bg);border:1px solid rgba(124,58,237,0.28);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;margin:0 0 14px;position:relative}
-.answer pre::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent2),var(--neon2),transparent)}
-.answer pre code{background:none;padding:0;font-size:12.5px;line-height:1.6;color:var(--text);border:none}
-.answer img{max-width:100%;border-radius:var(--radius);border:1px solid var(--border-glow);margin-top:6px;box-shadow:0 0 30px rgba(124,58,237,0.2)}
-.media-player{margin-top:10px;padding:10px 14px;background:rgba(5,3,14,0.7);border:1px solid var(--border-glow);border-radius:var(--radius);box-shadow:0 0 20px rgba(124,58,237,0.15)}
-.video-player video,.audio-player audio{width:100%;border-radius:6px;display:block}
-.video-player video{border:1px solid rgba(192,132,252,0.3);box-shadow:0 0 20px rgba(124,58,237,0.2)}
-.media-caption{margin:6px 0 0;font-family:var(--mono);font-size:11px;color:var(--subtext);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cursor{display:inline-block;width:8px;height:16px;background:var(--neon);vertical-align:text-bottom;animation:blink .8s steps(2) infinite;box-shadow:0 0 8px var(--neon)}
-@keyframes blink{50%{opacity:0}}
-.dots span{animation:bounce 1.2s infinite;display:inline-block;color:var(--accent)}
-.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-4px);opacity:1}}
-
-/* ─── Composer ─── */
-.composer-wrap{border-top:1px solid var(--border);background:linear-gradient(0deg,var(--bg2),transparent);flex-shrink:0;position:relative}
-.composer-wrap::before{content:'';position:absolute;top:0;left:8%;right:8%;height:1px;
-  background:linear-gradient(90deg,transparent,var(--accent2),var(--neon2),transparent);
-  box-shadow:0 0 14px rgba(168,85,247,0.45)}
-.status-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 28px 0;font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:0.06em}
-.status-left{display:flex;align-items:center;gap:8px}
-.status-dot{width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 7px var(--red);opacity:0.9;transition:background .4s,box-shadow .4s}
-.status-dot.active{background:var(--green);box-shadow:0 0 7px var(--green);animation:s-pulse 1s ease-in-out infinite}
-@keyframes s-pulse{0%,100%{opacity:1;box-shadow:0 0 10px var(--green),0 0 22px var(--green)}50%{opacity:.25;box-shadow:0 0 3px var(--green)}}
-.composer{max-width:800px;margin:0 auto;padding:14px 28px 20px}
-.box{display:flex;align-items:flex-end;gap:10px;background:var(--panel);
-  border:1px solid var(--border);border-radius:14px;padding:10px 10px 10px 16px;transition:all .2s;position:relative}
-.box::before{content:'';position:absolute;inset:0;border-radius:13px;
-  background:linear-gradient(135deg,rgba(124,58,237,0.05),transparent);pointer-events:none}
-.box:focus-within{border-color:var(--border-glow);box-shadow:0 0 0 1px rgba(168,85,247,0.12),0 0 32px rgba(124,58,237,0.1)}
-textarea{flex:1;border:none;outline:none;resize:none;background:transparent;
-  font-family:var(--body);font-size:15px;line-height:1.5;color:var(--text);
-  max-height:200px;padding:4px 0;caret-color:var(--neon)}
-textarea::placeholder{color:var(--muted);font-size:14px}
-.send{width:36px;height:36px;border-radius:9px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));
-  color:#fff;font-size:16px;flex-shrink:0;display:grid;place-items:center;
-  transition:all .2s;box-shadow:0 0 16px rgba(168,85,247,0.45)}
-.send:hover{box-shadow:0 0 26px rgba(232,121,249,0.6);transform:scale(1.05)}
-.send:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
-.hint{text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:9px;letter-spacing:0.05em}
-
-/* Toast notification */
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--panel2);border:1px solid var(--border-glow);border-radius:8px;
-  padding:8px 18px;font-family:var(--mono);font-size:11px;color:var(--neon);
-  letter-spacing:0.07em;opacity:0;transition:all .3s;pointer-events:none;z-index:10000;
-  box-shadow:0 0 20px rgba(168,85,247,0.3)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ─── Message action bar (copy button, appears on hover) ─── */
-.msg-actions{
-  display:flex;align-items:center;gap:8px;margin-top:10px;
-  opacity:0;pointer-events:none;transition:opacity .18s
-}
-.msg.assistant:hover .msg-actions{opacity:1;pointer-events:auto}
-.action-btn{
-  background:var(--panel);border:1px solid var(--border);border-radius:6px;
-  padding:4px 12px;font-family:var(--mono);font-size:10px;color:var(--text-dim);
-  cursor:pointer;letter-spacing:0.06em;transition:all .15s;display:flex;align-items:center;gap:5px
-}
-.action-btn:hover{border-color:var(--border-glow);color:var(--neon);box-shadow:0 0 10px rgba(168,85,247,0.2)}
-.action-btn.copied{color:var(--green)!important;border-color:rgba(74,222,128,0.35)!important}
-
-/* ─── Image download overlay ─── */
-.img-wrap{position:relative;display:inline-block;max-width:100%;margin-top:10px}
-.img-wrap img{
-  display:block;max-width:100%;border-radius:8px;
-  border:1px solid var(--border-glow);box-shadow:0 0 30px rgba(124,58,237,0.2)
-}
-.img-overlay{
-  position:absolute;bottom:10px;right:10px;
-  display:flex;align-items:center;gap:6px;
-  opacity:0;transition:opacity .2s;pointer-events:none
-}
-.img-wrap:hover .img-overlay{opacity:1;pointer-events:auto}
-.fmt-select{
-  width:auto!important;padding:4px 8px!important;font-size:10px!important;
-  background:rgba(9,5,21,0.92)!important;border:1px solid var(--border-glow)!important;
-  border-radius:5px!important;cursor:pointer;color:var(--text)!important;
-  backdrop-filter:blur(10px)
-}
-.dl-btn{
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));
-  border:none;border-radius:5px;padding:5px 13px;
-  font-family:var(--mono);font-size:10px;color:#fff;
-  cursor:pointer;letter-spacing:0.06em;
-  box-shadow:0 0 12px rgba(168,85,247,0.4);transition:box-shadow .15s
-}
-.dl-btn:hover{box-shadow:0 0 20px rgba(232,121,249,0.65)}
-
-@media(max-width:720px){.sidebar{display:none}.thread,.composer,.status-bar{padding-left:16px;padding-right:16px}}
-
-/* ═══════════════ CODE PREVIEW PANEL ═══════════════ */
-.preview-panel{
-  position:fixed;top:0;right:0;bottom:0;z-index:4500;
-  width:min(680px,52vw);
-  display:flex;flex-direction:column;
-  background:#fff;
-  box-shadow:-6px 0 50px rgba(0,0,0,0.5);
-  transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)
-}
-.preview-panel.open{transform:translateX(0)}
-.preview-head{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 14px;flex-shrink:0;
-  background:var(--panel);border-bottom:1px solid var(--border)
-}
-.preview-title{font-family:var(--title);font-size:11px;color:var(--neon);letter-spacing:0.12em;flex:1}
-.preview-tool{
-  background:none;border:1px solid var(--border);border-radius:5px;
-  padding:3px 9px;font-family:var(--mono);font-size:9.5px;color:var(--text-dim);
-  cursor:pointer;letter-spacing:0.05em;transition:all .15s
-}
-.preview-tool:hover{border-color:var(--border-glow);color:var(--neon)}
-.preview-tool.close-btn:hover{border-color:var(--red);color:var(--red)}
-.preview-iframe{flex:1;border:none;width:100%;background:#fff}
-.preview-btn{
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));
-  border:none;border-radius:6px;padding:4px 12px;
-  font-family:var(--mono);font-size:10px;color:#fff;cursor:pointer;
-  letter-spacing:0.06em;display:flex;align-items:center;gap:5px;
-  box-shadow:0 0 10px rgba(168,85,247,0.35);transition:box-shadow .15s
-}
-.preview-btn:hover{box-shadow:0 0 18px rgba(232,121,249,0.55)}
-
-/* ═══════════════ IMAGE ATTACHMENT ═══════════════ */
-.attach-btn{
-  width:34px;height:34px;border-radius:8px;border:1px solid var(--border);
-  background:var(--panel2);cursor:pointer;flex-shrink:0;
-  display:grid;place-items:center;transition:all .2s;color:var(--text-dim)
-}
-.attach-btn:hover{border-color:var(--border-glow);color:var(--neon);box-shadow:0 0 10px rgba(168,85,247,0.2)}
-.attachment-preview{
-  display:none;align-items:center;gap:10px;
-  padding:8px 12px 0;
-}
-.attachment-preview.visible{display:flex}
-.attach-thumb{
-  position:relative;width:56px;height:56px;border-radius:8px;overflow:hidden;
-  border:1px solid var(--border-glow);flex-shrink:0
-}
-.attach-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.attach-remove{
-  position:absolute;top:2px;right:2px;
-  width:16px;height:16px;border-radius:3px;
-  background:rgba(5,3,14,0.8);border:none;
-  color:var(--red);font-size:10px;cursor:pointer;
-  display:grid;place-items:center;line-height:1
-}
-.attach-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.05em}
-
-/* ═══════════════ GALLERY ═══════════════ */
-.gallery-btn{
-  background:none;border:1px solid var(--border);border-radius:8px;
-  padding:5px 11px;cursor:pointer;display:flex;align-items:center;gap:6px;
-  font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;
-  transition:all .2s
-}
-.gallery-btn:hover{border-color:var(--border-glow);color:var(--neon);box-shadow:0 0 12px rgba(168,85,247,0.2)}
-.gallery-btn svg{flex-shrink:0}
-
-/* Modal backdrop */
-.gallery-modal{
-  display:none;position:fixed;inset:0;z-index:5000;
-  background:rgba(5,3,14,0.88);backdrop-filter:blur(12px);
-  animation:gfadein .2s ease
-}
-.gallery-modal.open{display:flex;flex-direction:column}
-@keyframes gfadein{from{opacity:0}to{opacity:1}}
-
-/* Modal shell */
-.gallery-shell{
-  width:min(900px,96vw);margin:auto;
-  background:var(--panel);border:1px solid var(--border-glow);border-radius:16px;
-  display:flex;flex-direction:column;max-height:88vh;
-  box-shadow:0 0 80px rgba(124,58,237,0.35)
-}
-.gallery-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0
-}
-.gallery-title{font-family:var(--title);font-size:14px;color:var(--neon);letter-spacing:0.12em}
-.gallery-count{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.08em}
-.gallery-close{
-  background:none;border:1px solid var(--border);border-radius:6px;
-  color:var(--muted);font-size:16px;width:28px;height:28px;cursor:pointer;
-  display:grid;place-items:center;transition:all .15s
-}
-.gallery-close:hover{border-color:var(--red);color:var(--red)}
-
-/* Grid */
-.gallery-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:12px;padding:20px;overflow-y:auto;flex:1
-}
-.gallery-empty{
-  grid-column:1/-1;text-align:center;padding:60px 20px;
-  font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:0.08em
-}
-
-/* Image card */
-.g-card{
-  position:relative;border-radius:10px;overflow:hidden;
-  border:1px solid var(--border);cursor:pointer;
-  aspect-ratio:1;background:var(--bg2);
-  transition:border-color .2s,box-shadow .2s
-}
-.g-card:hover{border-color:var(--border-glow);box-shadow:0 0 20px rgba(124,58,237,0.3)}
-.g-card img{width:100%;height:100%;object-fit:cover;display:block}
-.g-card-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(5,3,14,0.92) 0%,transparent 50%);
-  opacity:0;transition:opacity .2s;
-  display:flex;flex-direction:column;justify-content:flex-end;padding:10px
-}
-.g-card:hover .g-card-overlay{opacity:1}
-.g-card-prompt{
-  font-family:var(--mono);font-size:9px;color:var(--text-dim);
-  letter-spacing:0.04em;line-height:1.4;margin-bottom:8px;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden
-}
-.g-card-date{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:8px}
-.g-card-actions{display:flex;gap:6px}
-.g-dl-fmt{
-  flex:1;padding:4px 6px;font-size:9px;font-family:var(--mono);
-  background:rgba(9,5,21,0.9);border:1px solid var(--border-glow);
-  border-radius:4px;color:var(--text);cursor:pointer
-}
-.g-dl-btn{
-  background:linear-gradient(135deg,var(--accent2),var(--neon2));
-  border:none;border-radius:4px;padding:4px 10px;
-  font-family:var(--mono);font-size:9px;color:#fff;cursor:pointer;
-  white-space:nowrap;transition:box-shadow .15s
-}
-.g-dl-btn:hover{box-shadow:0 0 12px rgba(232,121,249,0.6)}
-.g-del-btn{
-  position:absolute;top:7px;right:7px;
-  background:rgba(5,3,14,0.75);border:1px solid rgba(248,113,113,0.3);
-  border-radius:4px;color:var(--red);font-size:11px;
-  width:22px;height:22px;display:grid;place-items:center;cursor:pointer;
-  opacity:0;transition:opacity .15s
-}
-.g-card:hover .g-del-btn{opacity:1}
-.g-del-btn:hover{background:rgba(248,113,113,0.15);border-color:var(--red)}
+  /* Admin */
+  .admin-msg{ border-left:2px solid var(--admin-deep)!important; background:rgba(127,29,29,.08)!important; padding-left:12px; }
+  .admin-msg-header{ font-family:var(--mono); font-size:9px; letter-spacing:.15em; color:var(--admin); margin-bottom:10px; }
+  .admin-body{ font-size:13px; line-height:1.6; } .admin-body pre{ background:#0b0e13; padding:10px; border-radius:6px; overflow:auto; } .admin-body code{ background:#1a1a1a; padding:2px 5px; border-radius:3px; font-size:11px; }
+  .admin-cmd-table{ border-collapse:collapse; margin-top:8px; width:100%; } .admin-cmd-table td{ padding:4px 12px 4px 0; font-size:11px; vertical-align:top; } .admin-cmd-table td:first-child{ color:var(--neon); white-space:nowrap; padding-right:20px; }
+  .admin-cmd-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; margin-top:10px; }
+  .admin-cmd-btn{ background:#0e1117; border:1px solid #3f0000; border-radius:8px; padding:10px 12px; cursor:pointer; text-align:left; transition:.15s; }
+  .admin-cmd-btn:hover{ background:#1a0000; border-color:var(--admin-deep); }
+  .admin-cmd-btn-label{ display:block; font-family:var(--mono); font-size:9px; letter-spacing:.12em; color:#f87171; margin-bottom:3px; }
+  .admin-cmd-btn-desc{ display:block; font-size:10px; color:var(--muted); line-height:1.4; }
+  .modal{ position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.75); backdrop-filter:blur(6px); }
+  .modal.show{ display:flex; }
+  .topbar{ position:relative; }
+  .combine-btn{ width:100%; margin-bottom:8px; background:transparent; border:1px solid var(--border-strong); color:var(--muted); border-radius:8px; padding:7px; font-family:var(--mono); font-size:10px; letter-spacing:.12em; cursor:pointer; }
+  .combine-btn:hover{ border-color:var(--neon); color:var(--neon); } .combine-btn.on{ background:#0c1820; border-color:var(--neon); color:var(--neon); }
+  .agent.selected{ background:#0c1820; border-color:var(--neon); } .agent .order{ color:var(--neon); font-weight:700; }
+  .gear{ background:transparent; border:1px solid var(--border-strong); color:var(--muted); border-radius:8px; width:30px; height:26px; cursor:pointer; font-size:13px; } .gear:hover{ border-color:var(--neon); color:var(--neon); }
+  .settings-panel{ position:absolute; top:44px; right:14px; z-index:60; width:282px; background:#0d1117; border:1px solid var(--neon); border-radius:12px; padding:14px; display:none; box-shadow:0 10px 34px rgba(0,0,0,.55); }
+  .settings-panel.show{ display:block; }
+  .settings-panel .sp-title{ font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--neon); margin-bottom:8px; }
+  .settings-panel label{ display:block; font-size:10px; color:var(--muted); margin:8px 0 3px; font-family:var(--mono); letter-spacing:.05em; }
+  .settings-panel select,.settings-panel input{ width:100%; box-sizing:border-box; background:#0a0a0a; border:1px solid #333; border-radius:6px; color:#fff; padding:7px 9px; font-family:var(--mono); font-size:11px; }
+  .sp-msg{ font-size:10px; color:#86efac; margin-top:8px; min-height:12px; font-family:var(--mono); }
+  .sp-chip{ background:transparent; border:1px solid var(--border-strong); color:var(--muted); border-radius:10px; padding:0 7px; font-size:9px; cursor:pointer; } .sp-chip:hover{ border-color:var(--neon); color:var(--neon); }
+  .preview-btn{ background:#0c1820; border:1px solid var(--neon); color:var(--neon); border-radius:8px; padding:6px 12px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; cursor:pointer; } .preview-btn:hover{ box-shadow:0 0 12px var(--glow); }
+  .msg-copy-bar{ display:flex; justify-content:flex-end; margin-top:5px; opacity:0; transition:opacity .15s; }
+  .msg.user .msg-copy-bar{ justify-content:flex-end; }
+  .msg:hover .msg-copy-bar{ opacity:1; }
+  .copy-btn{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:3px 10px; font-family:var(--mono); font-size:10px; color:var(--muted); cursor:pointer; letter-spacing:.06em; display:inline-flex; align-items:center; gap:4px; transition:.15s; }
+  .copy-btn:hover{ border-color:var(--neon); color:var(--neon); }
+  .copy-btn.copied{ color:#86efac!important; border-color:rgba(134,239,172,.4)!important; }
 </style>
 </head>
 <body>
+  <aside class="sidebar">
+    <div class="brand"><img src="/static/jarvis-logo.png" alt="J"/><span class="mark">J.A.R.V.I.S</span><span class="tag">ONLINE</span></div>
+    <button class="new-chat" onclick="newChat()"><span class="plus">+</span> New session</button>
+    <div class="section-label">Sessions</div>
+    <div class="session-list" id="sessionList"></div>
+    <button class="combine-btn" id="combineBtn" onclick="toggleCombine()">⚙ COMBINE MODULES</button>
+    <div class="section-label" id="agentHint">Agents · click to pin one</div>
+    <div class="agent-list" id="agentList"></div>
+    <div class="footer" id="footer">Loading…</div>
+    <button class="admin-link" style="border-color:var(--border-strong);color:var(--muted)" onclick="openGallery(false)">🖼 IMAGE GALLERY</button>
+    <button class="admin-link" onclick="showAdminModal()">⬡ ADMINISTRATOR ACCESS</button>
+  </aside>
 
-<!-- ══ TOAST ══ -->
-<div class="toast" id="toast"></div>
-
-<!-- ══ CODE PREVIEW PANEL ══ -->
-<div class="preview-panel" id="previewPanel">
-  <div class="preview-head">
-    <span class="preview-title">// LIVE PREVIEW</span>
-    <button class="preview-tool" onclick="refreshPreview()" title="Refresh">↺ Refresh</button>
-    <button class="preview-tool" onclick="openPreviewTab()" title="Open in new tab">↗ New Tab</button>
-    <button class="preview-tool close-btn" onclick="closePreview()">✕ Close</button>
-  </div>
-  <iframe class="preview-iframe" id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms" title="Live Preview"></iframe>
-</div>
-
-<!-- ══ GALLERY MODAL ══ -->
-<div class="gallery-modal" id="galleryModal" onclick="if(event.target===this)closeGallery()">
-  <div class="gallery-shell">
-    <div class="gallery-head">
-      <div>
-        <div class="gallery-title">// IMAGE GALLERY</div>
-        <div class="gallery-count" id="galleryCount">0 images</div>
+  <main class="main">
+    <div class="topbar">
+      <div class="stat"><span id="statusDot"></span><span id="statusLeft">SYSTEM STANDBY</span></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span id="statusRight">Ready</span>
+        <button class="gear" onclick="toggleSettings()" title="Provider, model & API key">⚙</button>
       </div>
-      <button class="gallery-close" onclick="closeGallery()">✕</button>
-    </div>
-    <div class="gallery-grid" id="galleryGrid"></div>
-  </div>
-</div>
-
-<!-- ══ SIDEBAR ══ -->
-<aside class="sidebar">
-  <div class="brand">
-    <div class="brand-row">
-      <div class="brand-icon" style="background:none;box-shadow:none;padding:0;overflow:hidden"><img src="/static/jarvis-logo.png" style="width:34px;height:34px;object-fit:cover;border-radius:8px;display:block"/></div>
-      <div class="brand-name">J.A.R.V.I.S</div>
-    </div>
-    <div class="brand-sub">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
-  </div>
-
-  <div class="sidebar-body">
-    <button class="new-sess-btn" onclick="newSession()">
-      <span class="plus">+</span> New Session
-    </button>
-
-    <!-- Sessions -->
-    <div class="s-label open" id="sessLabel" onclick="toggleSection('sess')">
-      <span class="chevron">▶</span> Sessions
-    </div>
-    <div id="sessSection">
-      <div class="sessions-list" id="sessionList"></div>
-    </div>
-
-    <!-- Modules -->
-    <div class="s-label open" id="modLabel" onclick="toggleSection('mod')">
-      <span class="chevron">▶</span> Modules
-    </div>
-    <div id="modSection">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 6px">
-        <span id="modSubtitle" style="font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:0.05em">Auto-routed · hover to override</span>
-        <button class="select-mode-btn" id="selectModeBtn" onclick="toggleSelectMode()" title="Choose which modules work together">SELECT</button>
-      </div>
-      <div class="multi-select-bar" id="multiSelectBar">
-        <span id="multiSelectCount">0 selected</span>
-        <button class="multi-clear-btn" onclick="clearMultiSelect()">CLEAR ✕</button>
-      </div>
-      <div class="agent-list" id="agentList"></div>
-    </div>
-
-    <!-- Provider -->
-    <div class="provider-section">
-      <div class="s-label" id="provLabel" onclick="toggleSection('prov')" style="margin-top:14px">
-        <span class="chevron">▶</span> Provider
-      </div>
-      <div id="provSection" style="display:none">
-        <div class="provider-panel">
-          <div class="field-label">BACKEND</div>
-          <select id="providerSelect" onchange="onProviderChange()">
-            <option value="mock">Mock (no setup)</option>
-            <option value="ollama" selected>Ollama (local)</option>
-            <option value="groq">Groq</option>
-            <option value="gemini">Google Gemini</option>
-            <option value="openai">OpenAI</option>
+      <div id="settingsPanel" class="settings-panel">
+        <div class="sp-title">PROVIDER · MODEL · KEY</div>
+        <label>Provider</label>
+        <select id="spProvider" onchange="spProviderChange()"></select>
+        <div id="spOllamaRow" style="display:none">
+          <label>Ollama host</label>
+          <select id="spOllamaPreset" onchange="ollamaPresetChange()" style="margin-bottom:6px">
+            <option value="http://localhost:11434">Local — http://localhost:11434</option>
+            <option value="https://api.ollama.com">Cloud — https://api.ollama.com</option>
+            <option value="custom">Custom URL…</option>
           </select>
-          <div id="modelRow" style="display:none">
-            <div class="field-label">MODEL</div>
-            <select id="modelSelect"></select>
-          </div>
-          <div id="apiKeyRow" style="display:none">
-            <div class="field-label">API KEY</div>
-            <input type="password" id="apiKeyInput" placeholder="Paste key here"/>
-          </div>
-          <div id="openaiBaseUrlRow" style="display:none">
-            <div class="field-label">BASE URL</div>
-            <input type="text" id="openaiBaseUrlInput" placeholder="https://api.ollama.com/v1"/>
-          </div>
-          <div id="ollamaRow">
-            <div class="field-label">OLLAMA HOST</div>
-            <select id="ollamaHostInput" onchange="onOllamaHostChange()">
-              <option value="http://localhost:11434">Local — http://localhost:11434</option>
-              <option value="https://api.ollama.com">Cloud — https://api.ollama.com</option>
-            </select>
-            <div class="field-label" style="margin-top:8px">API KEY <span style="opacity:.5;font-size:.8em">(optional — for cloud)</span></div>
-            <input type="password" id="ollamaKeyInput" placeholder="Paste cloud key here"/>
-          </div>
-          <button class="apply-btn" onclick="applyProvider()">⚡ APPLY CONFIGURATION</button>
-          <div class="apply-msg" id="applyMsg"></div>
+          <input id="spOllamaHost" placeholder="http://localhost:11434" style="display:none"/>
+          <button class="wf-btn ghost" style="margin-top:6px;width:100%" onclick="refreshOllamaModels()">↻ Connect &amp; load models</button>
+        </div>
+        <label>Model</label>
+        <select id="spModel"></select>
+        <label id="spKeyLabel">API key (for the selected provider)</label>
+        <input id="spKey" type="password" placeholder="paste key — blank keeps current"/>
+        <button class="wf-btn" onclick="applySettings()">⬡ APPLY</button>
+        <div id="spMsg" class="sp-msg"></div>
+      </div>
+    </div>
+    <div class="scroll" id="scroll">
+      <div class="thread" id="thread">
+        <div class="welcome" id="welcome">
+          <img src="/static/jarvis-logo.png" alt="J.A.R.V.I.S"/>
+          <h1>GOOD TO HAVE YOU BACK, SIR.</h1>
+          <div class="chips" id="chips"></div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="footer" id="footer">Initializing…</div>
-</aside>
-
-<!-- ══ MAIN ══ -->
-<main class="main">
-  <!-- Top bar -->
-  <div class="top-bar">
-    <div class="session-title" id="sessionTitle">// NEW SESSION</div>
-    <div class="top-right">
-      <button class="gallery-btn" onclick="openGallery()" title="Image Gallery">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/>
-          <rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
-        </svg>
-        GALLERY
-      </button>
-      <div class="incog-badge" id="overrideBadge" style="cursor:pointer;border-color:rgba(232,121,249,0.4);color:var(--neon2);background:rgba(232,121,249,0.06);" onclick="clearOverride()" title="Click to release override">
-        <span class="incog-dot" style="background:var(--neon2);box-shadow:0 0 6px var(--neon2)"></span>
-        OVERRIDE: <span id="overrideName"></span> &nbsp;✕
-      </div>
-      <div class="incog-badge" id="incogBadge">
-        <span class="incog-dot"></span> INCOGNITO
-      </div>
-      <!-- Ghost button (Koenigsegg-style ghost, triggers incognito) -->
-      <button class="ghost-btn" id="ghostBtn" onclick="toggleIncognito()" title="Toggle Incognito Mode — sessions not saved, but memory is accessible">
-        <svg class="ghost-svg" viewBox="0 0 52 72" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="ghost-glow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2.5" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <!-- Crown -->
-          <path class="ghost-crown" filter="url(#ghost-glow)"
-            d="M 11 24 L 14 13 L 20 19 L 26 11 L 32 19 L 38 13 L 41 24 Z"/>
-          <!-- Body -->
-          <path class="ghost-body" filter="url(#ghost-glow)"
-            d="M 26 24
-               C 12 24 4 34 4 44
-               L 4 67
-               Q 10 60 16 64
-               Q 20 68 23 64
-               Q 25 61 26 63
-               Q 27 61 29 64
-               Q 32 68 36 64
-               Q 42 60 48 67
-               L 48 44
-               C 48 34 40 24 26 24 Z"/>
-          <!-- Eyes -->
-          <ellipse class="ghost-eye" cx="19" cy="46" rx="5.5" ry="6.5"/>
-          <ellipse class="ghost-eye" cx="33" cy="46" rx="5.5" ry="6.5"/>
-          <!-- Eye shine -->
-          <ellipse fill="rgba(192,132,252,0.4)" cx="21" cy="44" rx="1.8" ry="2.2"/>
-          <ellipse fill="rgba(192,132,252,0.4)" cx="35" cy="44" rx="1.8" ry="2.2"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- Scroll -->
-  <div class="scroll" id="scroll">
-    <div class="thread" id="thread">
-      <div class="welcome" id="welcome">
-        <div class="welcome-icon"><img src="/static/jarvis-logo.png" alt="J.A.R.V.I.S"/></div>
-        <h1 id="welcomeHeading">ONLINE &amp; READY</h1>
-        <p id="welcomeSub">// MULTI-AGENT ORCHESTRATION SYSTEM ACTIVE · MEMORY ENABLED //</p>
-        <div class="chips" id="chips"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Composer -->
-  <div class="composer-wrap">
-    <div class="status-bar">
-      <div class="status-left">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusLeft">SYSTEM OFFLINE</span>
-      </div>
-      <span id="statusRight">AWAITING INPUT</span>
-    </div>
-    <div class="composer">
-      <!-- Image attachment preview strip -->
-      <div class="attachment-preview" id="attachPreview">
-        <div class="attach-thumb" id="attachThumb">
-          <img id="attachThumbImg" src="" alt=""/>
-          <button class="attach-remove" onclick="clearAttachment()" title="Remove">✕</button>
+    <div class="composer-wrap">
+      <div class="composer">
+        <div id="attachPreview" class="attach-preview" style="display:none"></div>
+        <div class="box">
+          <input type="file" id="fileInput" style="display:none" onchange="onFilePicked(event)"/>
+          <button class="iconbtn" id="attach" onclick="document.getElementById('fileInput').click()" title="Attach a file from your computer">📎</button>
+          <textarea id="input" rows="1" placeholder="Ask anything — or //admin, or //wf <id> <prompt>"></textarea>
+          <button class="iconbtn" id="mic" onclick="toggleMic()" title="Voice input">🎤</button>
+          <button class="iconbtn" id="speak" onclick="toggleSpeak()" title="Read replies aloud">🔊</button>
+          <button class="send" id="send" onclick="onSend()" title="Send">↑</button>
         </div>
-        <span class="attach-label" id="attachLabel">Image attached — describe your edit</span>
+        <div class="hint">Routes automatically · pin an agent in the sidebar · <code>//wf default &lt;prompt&gt;</code> runs a workflow</div>
       </div>
-      <div class="box">
-        <!-- Hidden file input -->
-        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="onFileSelected(event)"/>
-        <button class="attach-btn" onclick="$('fileInput').click()" title="Attach image">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21,15 16,10 5,21"/>
-          </svg>
-        </button>
-        <textarea id="input" rows="1" placeholder="Enter command — coding, writing, analysis, research, or image generation…"></textarea>
-        <button class="send" id="send" onclick="onSend()" title="Execute">↑</button>
-      </div>
-      <div class="hint" id="hint">// ROUTING ENGINE ACTIVE · AGENT DISPATCHED AUTOMATICALLY //</div>
     </div>
-  </div>
-</main>
+  </main>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// CONSTANTS & STATE
-// ═══════════════════════════════════════════════════════
-const STORAGE_KEY        = 'jarvis_sessions_v1';
-const PERSONALITY_KEY    = 'jarvis_user_profile_v1';
-const PERSONALITY_MSGKEY = 'jarvis_profile_msg_count_v1'; // how many msgs were analysed last time
-const MAX_SESSIONS       = 30;
-const MAX_MEM_TURNS      = 8;   // exchanges to include in memory context
-const PROFILE_UPDATE_EVERY = 15; // refresh personality every N new user messages
-
-const GREETINGS = [
-  // JARVIS / Iron Man style
-  { h: "GOOD TO HAVE YOU BACK, SIR.",        s: "ALL SYSTEMS NOMINAL · AWAITING INSTRUCTION" },
-  { h: "ALL SYSTEMS OPERATIONAL.",            s: "WHAT WOULD YOU LIKE TO TACKLE TODAY?" },
-  { h: "WELCOME BACK.",                       s: "SYSTEMS CHARGED · READY FOR DEPLOYMENT" },
-  { h: "INITIALISATION COMPLETE.",            s: "NEURAL PATHWAYS ONLINE · STANDING BY" },
-  { h: "AT YOUR SERVICE.",                    s: "MULTI-AGENT ARRAY PRIMED · WHAT'S THE MISSION?" },
-  { h: "REACTOR ONLINE. SENSORS ONLINE.",     s: "ALL WEAPONS HOT — JUST KIDDING · READY WHEN YOU ARE" },
-  { h: "THE HOUSE IS IN ORDER, SIR.",         s: "MEMORY LOADED · MODULES ARMED · GO AHEAD" },
-  { h: "RUNNING DIAGNOSTICS… ALL GREEN.",     s: "NOTHING BROKEN TODAY · PROCEED AS YOU WERE" },
-  { h: "I'VE BEEN WAITING.",                  s: "AGENT DISPATCH ACTIVE · LET'S GET TO WORK" },
-  // Claude-ish warmth blended in
-  { h: "HELLO. LET'S BUILD SOMETHING.",       s: "READY TO THINK, CREATE, AND EXPLORE WITH YOU" },
-  { h: "BACK AGAIN. I LIKE YOUR COMMITMENT.", s: "RESEARCH · CODE · CREATE · JUST ASK" },
-  { h: "WHAT ARE WE SOLVING TODAY?",          s: "EVERY PROBLEM HAS AN ANSWER · LET'S FIND YOURS" },
-  { h: "SHARP MINDS DESERVE SHARP TOOLS.",   s: "J.A.R.V.I.S ONLINE · FULLY OPERATIONAL" },
-  { h: "YOUR COMMAND, MY COMPUTATION.",       s: "MULTI-AGENT ORCHESTRATION STANDING BY" },
-  { h: "I HAVE REVIEWED YOUR HISTORY.",       s: "CONTEXT LOADED · MEMORY ACTIVE · PROCEED" },
+const EXAMPLES = [
+  { k:"coding",        t:"Add a /health endpoint that returns {\"ok\":true} to app.py" },
+  { k:"deep research", t:"Research the current state of solid-state batteries and cite sources." },
+  { k:"solver",        t:"A train goes 60 km at 30 km/h then 60 km at 60 km/h. Average speed?" },
+  { k:"writing",       t:"Draft a warm 4-sentence thank-you email to a mentor." },
+  { k:"image",         t:"Generate an image of a lighthouse on a cliff at sunset, watercolor." },
+  { k:"canva",         t:"Make a presentation in Canva titled 'Q3 Review'." },
 ];
 
-function pickGreeting() {
-  return GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+let history = [], streaming = false, pinnedAgent = null, sessions = [], currentSession = null, attachedImage = null, attachedText = null;
+let speakEnabled = false, recog = null;
+const $ = (id) => document.getElementById(id);
+const scrollEl = $("scroll");
+function scrollDown(){ scrollEl.scrollTop = scrollEl.scrollHeight; }
+function setStatus(s){ $("statusRight").textContent = s; }
+
+async function boot(){
+  fillChips();
+  try{
+    const a = await (await fetch("/api/agents")).json();
+    $("agentList").innerHTML = (a.agents||[]).map(ag=>
+      `<div class="agent" data-agent="${escA(ag.name)}" onclick="agentClick('${escA(ag.name)}')">
+         <div class="name"><span class="dot"></span>${cap(ag.name)}</div>
+         <div class="desc">${escH(shorten(ag.description,70))}</div>
+       </div>`).join("");
+  }catch(e){}
+  refreshFooter();
+  sessions = await fetchSessions();
+  await migrateLocal();
+  currentSession = blankSession();
+  history = currentSession.messages;
+  renderSessionList();
 }
-
-const EXAMPLE_POOL = [
-  // CODE
-  {k:"// CODE",     t:"Write a Python function that finds the longest palindromic substring."},
-  {k:"// CODE",     t:"Build a REST API with FastAPI that handles JWT authentication."},
-  {k:"// CODE",     t:"Debug this JavaScript: const add = (a,b) => a - b;"},
-  {k:"// CODE",     t:"Write a SQL query to find the top 5 customers by total spend."},
-  {k:"// CODE",     t:"Create a Python web scraper for product prices using BeautifulSoup."},
-  {k:"// CODE",     t:"Implement a binary search tree with insert and search in Python."},
-  {k:"// CODE",     t:"Write a React component for a real-time search bar with debouncing."},
-  {k:"// CODE",     t:"Build a full-stack to-do app with a FastAPI backend and vanilla JS frontend."},
-  {k:"// CODE",     t:"Write a TypeScript utility that deep-merges two objects."},
-  {k:"// CODE",     t:"Create a rate-limiter middleware for an Express.js server."},
-  // RESEARCH
-  {k:"// RESEARCH", t:"Research the current state of solid-state batteries and cite sources."},
-  {k:"// RESEARCH", t:"What are the latest developments in quantum computing for 2025?"},
-  {k:"// RESEARCH", t:"Compare the top three large language models released this year."},
-  {k:"// RESEARCH", t:"Research how CRISPR gene editing is being used in cancer treatment."},
-  {k:"// RESEARCH", t:"Investigate the economic impact of AI on the global job market in 2025."},
-  {k:"// RESEARCH", t:"What are the most recent breakthroughs in nuclear fusion energy?"},
-  {k:"// RESEARCH", t:"Research the current state of humanoid robotics and key players."},
-  {k:"// RESEARCH", t:"What are the top-cited papers on transformer architecture from 2024–2025?"},
-  // SOLVE
-  {k:"// SOLVE",    t:"A train travels 60 km at 30 km/h then 60 km at 60 km/h. What is the average speed?"},
-  {k:"// SOLVE",    t:"Find all prime numbers less than 100 using the Sieve of Eratosthenes."},
-  {k:"// SOLVE",    t:"At 8% compound interest, how many years does it take to double an investment?"},
-  {k:"// SOLVE",    t:"Prove that the square root of 2 is irrational."},
-  {k:"// SOLVE",    t:"Solve dy/dx = 2x + 3 with initial condition y(0) = 1 step by step."},
-  {k:"// SOLVE",    t:"How many ways can 8 people be seated at a round table?"},
-  {k:"// SOLVE",    t:"A bag has 4 red and 6 blue balls. What is the probability of drawing 2 red?"},
-  {k:"// SOLVE",    t:"Find the shortest path between nodes in a weighted graph using Dijkstra's algorithm."},
-  // WRITE
-  {k:"// WRITE",    t:"Draft a warm 4-sentence thank-you email to a mentor."},
-  {k:"// WRITE",    t:"Write a compelling product launch announcement for a new AI assistant."},
-  {k:"// WRITE",    t:"Write a short science fiction story set on a colony on Europa."},
-  {k:"// WRITE",    t:"Draft a professional LinkedIn post about achieving a major career milestone."},
-  {k:"// WRITE",    t:"Write a persuasive essay arguing for a four-day work week."},
-  {k:"// WRITE",    t:"Compose a haiku about artificial intelligence and the future of humanity."},
-  {k:"// WRITE",    t:"Write a cover letter for a senior software engineer role at a startup."},
-  {k:"// WRITE",    t:"Draft a concise executive summary for a market entry strategy report."},
-  // IMAGE
-  {k:"// IMAGE",    t:"Generate an image of a futuristic city at night, neon lights, cyberpunk style."},
-  {k:"// IMAGE",    t:"Create an illustration of a lone astronaut standing on a red Martian cliff."},
-  {k:"// IMAGE",    t:"Generate a photorealistic wolf howling at a full moon over snow-capped mountains."},
-  {k:"// IMAGE",    t:"Draw a cozy coffee shop interior, warm lighting, rain streaming down the window."},
-  {k:"// IMAGE",    t:"Generate an image of a dragon made entirely of stained glass, backlit by sunlight."},
-  {k:"// IMAGE",    t:"Create a minimalist logo concept for an AI startup — dark background, electric blue."},
-  {k:"// IMAGE",    t:"Generate a painterly landscape of a Japanese temple at cherry blossom season."},
-  {k:"// IMAGE",    t:"Create a surreal floating island in the clouds with a waterfall cascading into mist."},
-];
-
-let _currentExamples = [];
-function pickExamples() {
-  const cats = ["// CODE","// RESEARCH","// SOLVE","// WRITE","// IMAGE"];
-  return cats.map(cat => {
-    const pool = EXAMPLE_POOL.filter(e => e.k === cat);
-    return pool[Math.floor(Math.random() * pool.length)];
+function fillChips(){ const c=$("chips"); if(c) c.innerHTML = EXAMPLES.map((e,i)=>`<button class="chip" onclick="useExample(${i})"><span class="k">${e.k}</span>${escH(e.t)}</button>`).join(""); }
+async function refreshFooter(){
+  try{
+    const c = await (await fetch("/api/config")).json();
+    const free = c.free ? `<span class="free">free</span>` : "needs key";
+    $("footer").innerHTML = `Provider <b>${escH(c.provider)}</b> · ${free}<br>Model <b>${escH(c.model)}</b>`;
+  }catch(e){ $("footer").textContent = "Backend not reachable"; }
+}
+function updateFooter(){ refreshFooter(); }
+function useExample(i){ $("input").value = EXAMPLES[i].t; onSend(); }
+let selectMode=false, selectedAgents=[];
+function toggleCombine(){
+  selectMode=!selectMode; selectedAgents=[]; pinnedAgent=null;
+  $("combineBtn").classList.toggle("on",selectMode);
+  $("combineBtn").textContent = selectMode ? "✓ COMBINING — click modules" : "⚙ COMBINE MODULES";
+  $("agentHint").textContent = selectMode ? "Click modules to run together (in order)" : "Agents · click to pin one";
+  renderAgentStates();
+}
+function agentClick(name){
+  if(selectMode){
+    const i=selectedAgents.indexOf(name);
+    if(i>=0) selectedAgents.splice(i,1); else selectedAgents.push(name);
+    setStatus(selectedAgents.length ? "Pipeline: "+selectedAgents.map(cap).join(" → ") : "Select modules…");
+  } else {
+    pinnedAgent = (pinnedAgent===name) ? null : name;
+    setStatus(pinnedAgent ? `Pinned: ${cap(pinnedAgent)}` : "Auto-routing");
+  }
+  renderAgentStates();
+}
+function renderAgentStates(){
+  document.querySelectorAll(".agent").forEach(a=>{
+    const n=a.dataset.agent;
+    a.classList.toggle("pinned", !selectMode && n===pinnedAgent);
+    const sel = selectMode && selectedAgents.includes(n);
+    a.classList.toggle("selected", sel);
+    let o=a.querySelector(".order");
+    if(sel){ if(!o){ o=document.createElement("span"); o.className="order"; a.querySelector(".name").appendChild(o); } o.textContent=" #"+(selectedAgents.indexOf(n)+1); }
+    else if(o){ o.remove(); }
   });
 }
+function highlightAgent(name){ /* pin/selection states are managed by renderAgentStates */ }
 
-let currentSession  = null;  // {id, name, createdAt, messages:[]}
-let incognitoMode   = false;
-let pinnedAgent     = null;  // string | null — single-agent override
-let lastRoutedAgent = null;  // string | null — what JARVIS last picked automatically
-let selectMode      = false; // whether multi-select checkboxes are shown
-let selectedAgents  = [];    // ordered list of agents chosen in select mode
-let streaming       = false;
-let history         = [];    // current chat [{role,content}]
+/* ---- API key persistence ---- */
+const KP="jarvis_k_";
+function saveKey(p,k){ if(k) localStorage.setItem(KP+p,k); else localStorage.removeItem(KP+p); }
+function getKey(p){ return localStorage.getItem(KP+p)||""; }
 
-const $  = id => document.getElementById(id);
-const qs = sel => document.querySelector(sel);
-const scrollEl = $("scroll");
-
-// ═══════════════════════════════════════════════════════
-// SESSION STORAGE
-// ═══════════════════════════════════════════════════════
-function loadSessions() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
-}
-
-function persistSession(sess) {
-  const all = loadSessions();
-  const idx = all.findIndex(s => s.id === sess.id);
-  if (idx >= 0) all[idx] = sess;
-  else all.unshift(sess);
-  all.splice(MAX_SESSIONS);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-}
-
-function deleteSession(id) {
-  const all = loadSessions().filter(s => s.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-  if (currentSession && currentSession.id === id) newSession();
-  else renderSessionList();
-}
-
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-function fmtDate(iso) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 60000)    return 'just now';
-  if (diff < 3600000)  return Math.floor(diff/60000) + 'm ago';
-  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
-  return d.toLocaleDateString([], {month:'short', day:'numeric'});
-}
-
-// Build memory context from previous sessions (not the current one)
-function buildMemoryContext() {
-  const all = loadSessions().filter(s => !currentSession || s.id !== currentSession.id);
-  if (!all.length) return null;
-  let ctx = '';
-  for (const s of all.slice(0, 4)) {
-    const msgs = s.messages.slice(-MAX_MEM_TURNS);
-    if (!msgs.length) continue;
-    ctx += `\n[Session: ${s.name}]\n`;
-    for (const m of msgs) {
-      const who = m.role === 'user' ? 'User' : 'JARVIS';
-      ctx += `${who}: ${m.content.slice(0, 250)}${m.content.length > 250 ? '…' : ''}\n`;
+/* ---- provider / model / key settings ---- */
+async function toggleSettings(){ const p=$("settingsPanel"); const open=p.classList.toggle("show"); if(open) await loadSettings(); }
+async function loadSettings(){
+  try{
+    const c=await (await fetch("/api/config")).json();
+    $("spProvider").innerHTML=(c.providers||[]).map(p=>`<option ${p===c.provider?'selected':''}>${p}</option>`).join("");
+    applyProviderUI(c.provider);
+    // Sync ollama host dropdown
+    if(c.ollama_host){
+      const preset=$("spOllamaPreset"), host=c.ollama_host;
+      const known=[...preset.options].map(o=>o.value).filter(v=>v!=="custom");
+      if(known.includes(host)){ preset.value=host; $("spOllamaHost").style.display="none"; }
+      else { preset.value="custom"; $("spOllamaHost").value=host; $("spOllamaHost").style.display="block"; }
     }
+    await loadModels(c.provider, c.model);
+  }catch(e){ $("spMsg").textContent="✗ backend unreachable"; }
+}
+function applyProviderUI(provider){
+  const isOllama = provider==="ollama";
+  $("spOllamaRow").style.display = isOllama ? "block" : "none";
+  $("spKeyLabel").textContent = isOllama ? "Ollama API key (cloud only — leave blank for local)"
+    : (provider==="mock" ? "API key (not needed for mock)" : "API key (for the selected provider)");
+  // Prefill saved key for this provider
+  const saved=getKey(provider);
+  $("spKey").value=saved;
+  $("spKey").placeholder=saved ? "●●●● key saved — paste to update" : "paste key — blank keeps current";
+}
+async function loadModels(provider,current){
+  try{
+    const m=await (await fetch("/api/models?provider="+encodeURIComponent(provider))).json();
+    const opts=(m.models||[]);
+    $("spModel").innerHTML = opts.length ? opts.map(x=>`<option ${x===current?'selected':''}>${escH(x)}</option>`).join("") : `<option>${escH(current||"")}</option>`;
+    if(m.error) $("spMsg").textContent="⚠ "+m.error;
+  }catch(e){ $("spModel").innerHTML=`<option>${escH(current||"")}</option>`; }
+}
+function spProviderChange(){ const p=$("spProvider").value; applyProviderUI(p); loadModels(p, null); }
+function ollamaPresetChange(){
+  const v=$("spOllamaPreset").value;
+  if(v==="custom"){ $("spOllamaHost").style.display="block"; $("spOllamaHost").focus(); }
+  else { $("spOllamaHost").style.display="none"; $("spOllamaHost").value=v; }
+}
+function getOllamaHost(){ return $("spOllamaPreset").value==="custom" ? $("spOllamaHost").value.trim()||"http://localhost:11434" : $("spOllamaPreset").value; }
+async function refreshOllamaModels(){
+  const ollama_host=getOllamaHost();
+  const key=$("spKey").value.trim()||getKey("ollama");
+  const body={provider:"ollama", ollama_host}; if(key) body.ollama_api_key=key;
+  $("spMsg").textContent="Connecting to "+ollama_host+"…";
+  try{
+    await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    await loadModels("ollama", null);
+    $("spMsg").textContent="✓ Connected — pick a model, then Apply."; refreshFooter();
+  }catch(e){ $("spMsg").textContent="✗ "+e; }
+}
+async function applySettings(){
+  const provider=$("spProvider").value, model=$("spModel").value, key=$("spKey").value.trim();
+  const body={provider, model};
+  if(provider==="ollama"){ body.ollama_host=getOllamaHost(); if(key) body.ollama_api_key=key; }
+  else if(key){ body.api_key=key; }
+  // Persist key to localStorage so it survives page refresh
+  if(key) saveKey(provider, key);
+  try{
+    const d=await (await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+    $("spMsg").textContent="✓ "+(d.provider||provider)+" / "+(d.model||model); refreshFooter();
+    if(key){ $("spKey").placeholder="●●●● key saved — paste to update"; $("spKey").value=""; }
+  }catch(e){ $("spMsg").textContent="✗ "+e; }
+}
+
+/* ---- live preview of generated UIs ---- */
+function extractCode(raw){ return [...raw.matchAll(/```([a-zA-Z0-9_:+\/.\-]*)\r?\n([\s\S]*?)```/g)].map(m=>({lang:(m[1]||"").toLowerCase(), code:m[2]})); }
+function buildPreviewDoc(raw){
+  const blocks=extractCode(raw); let html="", css="", js="";
+  for(const b of blocks){
+    const lang=b.lang.replace(/^file:/,"");
+    const isHtml=/html?$/.test(lang)||/<!DOCTYPE/i.test(b.code)||/<html[\s>]/i.test(b.code)||/<body[\s>]/i.test(b.code);
+    if(isHtml&&!html) html=b.code;
+    else if(/css$/.test(lang)) css+=b.code+"\n";
+    else if(/(js|javascript|jsx|mjs)$/.test(lang)) js+=b.code+"\n";
   }
-  return ctx.trim() || null;
-}
-
-// ═══════════════════════════════════════════════════════
-// PERSONALITY / USER PROFILE
-// ═══════════════════════════════════════════════════════
-function getUserProfile() {
-  return localStorage.getItem(PERSONALITY_KEY) || "";
-}
-
-function saveUserProfile(profile) {
-  localStorage.setItem(PERSONALITY_KEY, profile);
-}
-
-// Collect all user messages across all saved sessions + current history
-function collectAllUserMessages() {
-  const msgs = [];
-  for (const s of loadSessions()) {
-    for (const m of s.messages) {
-      if (m.role === 'user') msgs.push(m.content);
-    }
-  }
-  for (const m of history) {
-    if (m.role === 'user') msgs.push(m.content);
-  }
-  return msgs;
-}
-
-// Call /api/personality in the background and persist the result
-async function refreshPersonalityProfile() {
-  const allMsgs = collectAllUserMessages();
-  const prevCount = parseInt(localStorage.getItem(PERSONALITY_MSGKEY) || "0");
-  if (allMsgs.length < 5) return;                       // not enough data yet
-  if (allMsgs.length - prevCount < PROFILE_UPDATE_EVERY) return; // not enough new msgs
-
-  try {
-    const resp = await fetch("/api/personality", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ messages: allMsgs.map(c => ({role:"user", content:c})) }),
-    });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (data.profile) {
-      saveUserProfile(data.profile);
-      localStorage.setItem(PERSONALITY_MSGKEY, String(allMsgs.length));
-    }
-  } catch { /* non-blocking — silently ignore */ }
-}
-
-// ═══════════════════════════════════════════════════════
-// SIDEBAR RENDERING
-// ═══════════════════════════════════════════════════════
-function renderSessionList() {
-  const all = loadSessions();
-  const el = $("sessionList");
-  if (!all.length) {
-    el.innerHTML = '<div class="no-sess">No saved sessions yet</div>';
-    return;
-  }
-  el.innerHTML = all.map(s => `
-    <div class="sess-item ${currentSession?.id === s.id ? 'active' : ''}"
-         onclick="loadSession('${escH(s.id)}')">
-      <div class="sess-meta">
-        <div class="sess-name">${escH(s.name)}</div>
-        <div class="sess-date">${fmtDate(s.createdAt)}</div>
-      </div>
-      <button class="sess-del" onclick="event.stopPropagation();deleteSession('${escH(s.id)}')" title="Delete">×</button>
-    </div>`).join('');
-}
-
-function renderAgentList(agents) {
-  if (selectMode) {
-    $("agentList").innerHTML = agents.map((ag, i) => {
-      const isChecked = selectedAgents.includes(ag.name);
-      const order     = isChecked ? selectedAgents.indexOf(ag.name) + 1 : '';
-      const cls       = isChecked ? 'selectable sel-checked' : 'selectable';
-      const badge     = isChecked
-        ? `<span class="sel-badge">SELECTED ${order}</span>` : '';
-      return `
-      <div class="agent ${cls}" data-agent="${escH(ag.name)}" onclick="toggleSelectAgent('${escH(ag.name)}')">
-        <div class="agent-left"><span class="agent-cb">${isChecked ? '✓' : ''}</span></div>
-        <div class="agent-info">
-          <div class="agent-name-row">
-            <span class="name">${cap(ag.name)}</span>${badge}
-          </div>
-          <div class="desc">${escH(shorten(ag.description, 68))}</div>
-        </div>
-      </div>`;
-    }).join('');
+  if(!html&&!js&&!css) return null;
+  const stub="<scr"+"ipt>(function(){var ph={message:'Preview mode — not hosted; this is placeholder data.',ok:true,data:[{id:1,name:'Sample'},{id:2,name:'Example'}]};"
+    +"window.fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(ph);},text:function(){return Promise.resolve(JSON.stringify(ph));}});};"
+    +"})();</scr"+"ipt>";
+  let doc;
+  if(/<html[\s>]/i.test(html)||/<!DOCTYPE/i.test(html)){
+    doc=html; var inj="<style>"+css+"</style>"+stub+"<scr"+"ipt>"+js+"</scr"+"ipt>";
+    if(/<\/body>/i.test(doc)) doc=doc.replace(/<\/body>/i, inj+"</body>"); else doc+=inj;
   } else {
-    $("agentList").innerHTML = agents.map(ag => {
-      const isPinned  = pinnedAgent === ag.name;
-      const isRouted  = lastRoutedAgent === ag.name && !isPinned;
-      const cls       = isPinned ? 'pinned' : isRouted ? 'routed' : '';
-      const pinLabel  = isPinned ? 'RELEASE ✕' : 'OVERRIDE';
-      const badge     = isPinned ? '<span class="override-badge">OVERRIDE</span>' : '';
-      return `
-      <div class="agent ${cls}" data-agent="${escH(ag.name)}">
-        <div class="agent-left"><span class="dot"></span></div>
-        <div class="agent-info">
-          <div class="agent-name-row">
-            <span class="name">${cap(ag.name)}</span>${badge}
-          </div>
-          <div class="desc">${escH(shorten(ag.description, 68))}</div>
-        </div>
-        <button class="pin-btn" onclick="event.stopPropagation();togglePinAgent('${escH(ag.name)}')">${pinLabel}</button>
-      </div>`;
-    }).join('');
+    doc="<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{font-family:system-ui;margin:16px;color:#111}"+css+"</style></head><body>"+html+stub+"<scr"+"ipt>"+js+"</scr"+"ipt></body></html>";
   }
+  return doc;
 }
-
-function toggleSelectMode() {
-  selectMode = !selectMode;
-  selectedAgents = [];
-  const btn = $("selectModeBtn");
-  const bar = $("multiSelectBar");
-  const subtitle = $("modSubtitle");
-  if (selectMode) {
-    btn.classList.add('active');
-    btn.textContent = 'SELECT ✓';
-    subtitle.textContent = 'Click modules to combine them';
-    // Clear single-agent override when entering select mode
-    pinnedAgent = null;
-    $("overrideBadge").classList.remove('visible');
-  } else {
-    btn.classList.remove('active');
-    btn.textContent = 'SELECT';
-    subtitle.textContent = 'Auto-routed · hover to override';
-    bar.classList.remove('visible');
-  }
-  refreshAgentList();
-  updateHint();
+function maybeAddPreview(msgEl, raw){
+  const doc=buildPreviewDoc(raw); if(!doc) return;
+  const bar=document.createElement("div"); bar.style.marginTop="8px";
+  const btn=document.createElement("button"); btn.className="preview-btn"; btn.textContent="▶ Preview UI";
+  btn.onclick=function(){ openPreview(doc); }; bar.appendChild(btn); msgEl.appendChild(bar);
 }
-
-function toggleSelectAgent(name) {
-  if (!selectMode) return;
-  const idx = selectedAgents.indexOf(name);
-  if (idx === -1) {
-    selectedAgents.push(name);
-  } else {
-    selectedAgents.splice(idx, 1);
-  }
-  // Update the bar
-  const bar   = $("multiSelectBar");
-  const count = $("multiSelectCount");
-  if (selectedAgents.length > 0) {
-    bar.classList.add('visible');
-    count.textContent = selectedAgents.length === 1
-      ? `1 module selected`
-      : `${selectedAgents.length} modules selected — will run in order`;
-    // Update override badge to show pipeline
-    $("overrideName").textContent = selectedAgents.map(a => cap(a)).join(' + ').toUpperCase();
-    $("overrideBadge").classList.add('visible');
-    $("overrideBadge").title = 'Click to clear multi-agent selection';
-  } else {
-    bar.classList.remove('visible');
-    $("overrideBadge").classList.remove('visible');
-  }
-  refreshAgentList();
-  updateHint();
+function openPreview(doc){ $("previewFrame").srcdoc=doc; $("previewModal").classList.add("show"); }
+function closePreview(){ $("previewModal").classList.remove("show"); $("previewFrame").srcdoc=""; }
+function welcomeHTML(){ return `<div class="welcome" id="welcome"><img src="/static/jarvis-logo.png" alt="J.A.R.V.I.S"/><h1>GOOD TO HAVE YOU BACK, SIR.</h1><div class="chips" id="chips"></div></div>`; }
+function renderWelcome(){ $("thread").innerHTML = welcomeHTML(); fillChips(); }
+function uid(){ return "s"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function blankSession(){ return { id:uid(), title:"", messages:[], updated:Date.now(), admin:false }; }
+async function fetchSessions(){ try{ const d=await (await fetch("/api/sessions")).json(); return d.sessions||[]; }catch(e){ return []; } }
+async function putSession(s){ try{ await fetch("/api/sessions/"+encodeURIComponent(s.id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:s.title,messages:s.messages,updated:s.updated,admin:!!s.admin})}); }catch(e){} }
+async function migrateLocal(){ try{ const old=JSON.parse(localStorage.getItem("jarvis_sessions_v1")||"[]"); if(old.length && !sessions.length){ for(const s of old){ await putSession(s); } localStorage.removeItem("jarvis_sessions_v1"); sessions=await fetchSessions(); } }catch(e){} }
+function newChat(){ newSession(); }
+function newSession(){
+  currentSession = blankSession(); history = currentSession.messages;
+  renderWelcome(); renderSessionList(); setStatus("New session");
 }
-
-function clearMultiSelect() {
-  selectedAgents = [];
-  $("multiSelectBar").classList.remove('visible');
-  $("overrideBadge").classList.remove('visible');
-  refreshAgentList();
-  updateHint();
-  showToast('Module selection cleared — auto-routing restored');
-}
-
-function togglePinAgent(name) {
-  // Not available in select mode
-  if (selectMode) return;
-  pinnedAgent = (pinnedAgent === name) ? null : name;
-  refreshAgentList();
-  updateHint();
-  const ob = $("overrideBadge");
-  if (pinnedAgent) {
-    $("overrideName").textContent = cap(pinnedAgent).toUpperCase();
-    ob.classList.add('visible');
-    showToast(`Override active: all queries sent to ${cap(pinnedAgent)}`);
-  } else {
-    ob.classList.remove('visible');
-    showToast('Override released — auto-routing restored');
-  }
-}
-
-function clearOverride() {
-  // Clear both single-pin and multi-select
-  if (selectMode && selectedAgents.length > 0) {
-    clearMultiSelect();
-    return;
-  }
-  pinnedAgent = null;
-  refreshAgentList();
-  updateHint();
-  $("overrideBadge").classList.remove('visible');
-  showToast('Override released — auto-routing restored');
-}
-
-function refreshAgentList() {
-  if (!window._agents) return;
-  renderAgentList(window._agents);
-}
-
-function updateHint() {
-  if (selectMode && selectedAgents.length > 0) {
-    $("hint").textContent = `// PIPELINE: ${selectedAgents.map(a=>a.toUpperCase()).join(' → ')} · TOP BAR ✕ TO CLEAR //`;
-  } else if (selectMode) {
-    $("hint").textContent = '// SELECT MODE: TICK MODULES TO BUILD A PIPELINE //';
-  } else if (pinnedAgent) {
-    $("hint").textContent = `// OVERRIDE: ${pinnedAgent.toUpperCase()} MODULE · TOP BAR ✕ TO RELEASE //`;
-  } else {
-    $("hint").textContent = '// ROUTING ENGINE ACTIVE · AGENT DISPATCHED AUTOMATICALLY //';
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// SECTION TOGGLES
-// ═══════════════════════════════════════════════════════
-function toggleSection(key) {
-  const sec  = $(key === 'sess' ? 'sessSection' : key === 'mod' ? 'modSection' : 'provSection');
-  const lbl  = $(key === 'sess' ? 'sessLabel'   : key === 'mod' ? 'modLabel'   : 'provLabel');
-  const open = sec.style.display !== 'none';
-  sec.style.display = open ? 'none' : '';
-  lbl.classList.toggle('open', !open);
-}
-
-// ═══════════════════════════════════════════════════════
-// PROVIDER PANEL  — per-provider key storage
-// ═══════════════════════════════════════════════════════
-const KEY_STORE = 'jarvis_api_keys_v1'; // { groq: "...", gemini: "...", openai: "..." }
-
-function loadStoredKeys() {
-  try { return JSON.parse(localStorage.getItem(KEY_STORE)) || {}; } catch { return {}; }
-}
-
-function saveKeyForProvider(provider, key) {
-  if (!key) return;
-  const store = loadStoredKeys();
-  store[provider] = key;
-  localStorage.setItem(KEY_STORE, JSON.stringify(store));
-}
-
-function getKeyForProvider(provider) {
-  return loadStoredKeys()[provider] || '';
-}
-
-async function onOllamaHostChange() {
-  const host = $("ollamaHostInput").value;
-  const storedKey = getKeyForProvider('ollama');
-  // Push new host (and stored key) to backend so the model fetch uses the right server
-  await fetch('/api/config', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      provider: 'ollama',
-      ollama_host: host,
-      ...(storedKey ? {ollama_api_key: storedKey} : {}),
-    }),
-  }).catch(() => {});
-  loadModelDropdown('ollama');
-}
-
-async function onProviderChange() {
-  const p = $("providerSelect").value;
-  const needsKey = ['groq','gemini','openai'].includes(p);
-  $("apiKeyRow").style.display = needsKey ? '' : 'none';
-  $("ollamaRow").style.display = p === 'ollama' ? '' : 'none';
-  $("openaiBaseUrlRow").style.display = p === 'openai' ? '' : 'none';
-
-  // Load the saved key for this provider (shows masked placeholder if already saved)
-  const keyInput = $("apiKeyInput");
-  if (needsKey) {
-    const saved = getKeyForProvider(p);
-    keyInput.value = saved;
-    keyInput.placeholder = saved ? '●●●● key saved — paste to update' : 'Paste key here';
-
-    // For OpenAI: push the stored key + base URL to the backend BEFORE fetching the
-    // model list — the /api/models fetch needs the key to be live in the backend.
-    if (p === 'openai' && saved) {
-      const baseUrl = $("openaiBaseUrlInput").value.trim();
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          provider: p,
-          api_key: saved,
-          ...(baseUrl ? {openai_base_url: baseUrl} : {}),
-        }),
-      }).catch(() => {});
-    }
-  } else {
-    keyInput.value = '';
-  }
-
-  // Ollama cloud key — show saved state in placeholder
-  if (p === 'ollama') {
-    const savedOllamaKey = getKeyForProvider('ollama');
-    const ollamaKeyInput = $("ollamaKeyInput");
-    ollamaKeyInput.value = '';
-    ollamaKeyInput.placeholder = savedOllamaKey
-      ? '●●●● key saved — paste to update'
-      : 'Paste cloud key here';
-    // Push stored key to backend before fetching model list
-    if (savedOllamaKey) {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ provider: p, ollama_api_key: savedOllamaKey }),
-      }).catch(() => {});
-    }
-  }
-
-  await loadModelDropdown(p);
-}
-
-async function loadModelDropdown(provider) {
-  const modelRow = $("modelRow");
-  const modelSel = $("modelSelect");
-  modelRow.style.display = 'none';
-  modelSel.innerHTML = '';
-
-  if (provider === 'mock') return; // only one model, no dropdown needed
-
-  // Show a loading placeholder
-  modelSel.innerHTML = '<option>Loading…</option>';
-  modelRow.style.display = '';
-
-  try {
-    const resp = await fetch(`/api/models?provider=${encodeURIComponent(provider)}`);
-    const data = await resp.json();
-    const models = data.models || [];
-
-    if (models.length <= 1) {
-      // Only one option — no need for a dropdown
-      modelRow.style.display = 'none';
-      return;
-    }
-
-    modelSel.innerHTML = models
-      .map(m => `<option value="${escH(m)}">${escH(m)}</option>`)
-      .join('');
-    modelRow.style.display = '';
-  } catch {
-    modelRow.style.display = 'none';
-  }
-}
-
-async function applyProvider() {
-  const provider      = $("providerSelect").value;
-  const modelSel      = $("modelSelect");
-  const model         = ($("modelRow").style.display !== 'none' && modelSel.value)
-                        ? modelSel.value : '';
-  const apiKey        = $("apiKeyInput").value.trim();
-  const ollamaHost    = $("ollamaHostInput").value.trim();
-  const ollamaKey     = $("ollamaKeyInput").value.trim();
-  const openaiBaseUrl = ($("openaiBaseUrlRow").style.display !== 'none')
-                        ? $("openaiBaseUrlInput").value.trim() : '';
-
-  // Save key to localStorage under this provider so it reloads next time
-  if (apiKey)    saveKeyForProvider(provider, apiKey);
-  if (ollamaKey) saveKeyForProvider('ollama', ollamaKey);
-
-  // Use the locally-stored key if the field was left blank (already-saved key)
-  const effectiveKey    = apiKey    || getKeyForProvider(provider);
-  const effectiveOllamaKey = ollamaKey || getKeyForProvider('ollama');
-
-  const body = {provider};
-  if (model)               body.model           = model;
-  if (effectiveKey)        body.api_key         = effectiveKey;
-  if (ollamaHost)          body.ollama_host     = ollamaHost;
-  if (effectiveOllamaKey !== undefined)
-                           body.ollama_api_key  = effectiveOllamaKey;
-  if (openaiBaseUrl)       body.openai_base_url = openaiBaseUrl;
-
-  $("applyMsg").style.color = 'var(--neon)';
-  $("applyMsg").textContent = 'Applying…';
-  try {
-    const resp = await fetch('/api/config', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
-    const cfg = await resp.json();
-    updateFooter(cfg);
-    $("applyMsg").style.color = 'var(--neon)';
-    $("applyMsg").textContent = 'Loading models…';
-    // Reload model dropdown now that the key+URL are live in the backend,
-    // then restore whatever the user had selected (if it still exists in the list).
-    await loadModelDropdown(provider);
-    if (model) {
-      const opts = Array.from($("modelSelect").options).map(o => o.value);
-      if (opts.includes(model)) $("modelSelect").value = model;
-    }
-    const newModel = ($("modelRow").style.display !== 'none' && $("modelSelect").value)
-                     ? $("modelSelect").value : cfg.model;
-    $("applyMsg").style.color = 'var(--green)';
-    $("applyMsg").textContent = '✓ ' + cfg.provider.toUpperCase() + ' / ' + newModel;
-    showToast('Provider switched to ' + cfg.provider);
-    // Update placeholders to reflect keys are now saved
-    if (effectiveKey) {
-      $("apiKeyInput").value = '';
-      $("apiKeyInput").placeholder = '●●●● key saved — paste to update';
-    }
-    if (ollamaKey) {
-      $("ollamaKeyInput").value = '';
-      $("ollamaKeyInput").placeholder = '●●●● key saved — paste to update';
-    }
-    setTimeout(() => { $("applyMsg").textContent = ''; }, 3000);
-  } catch(e) {
-    $("applyMsg").style.color = 'var(--red)';
-    $("applyMsg").textContent = '✗ Failed — backend unreachable';
-  }
-}
-
-function updateFooter(cfg) {
-  const freeTag = cfg.free
-    ? `<span class="free">FREE</span>`
-    : `<span class="needs-key">KEY REQUIRED</span>`;
-  $("footer").innerHTML = `PROVIDER <b>${cfg.provider.toUpperCase()}</b> · ${freeTag}<br>MODEL <b>${escH(cfg.model)}</b>`;
-  const sel = $("providerSelect");
-  if (sel && sel.value !== cfg.provider) {
-    sel.value = cfg.provider;
-    onProviderChange(); // reload model dropdown to match
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// INCOGNITO / GHOST
-// ═══════════════════════════════════════════════════════
-function toggleIncognito() {
-  incognitoMode = !incognitoMode;
-  const btn = $("ghostBtn");
-  const badge = $("incogBadge");
-  btn.classList.toggle('incognito', incognitoMode);
-  badge.classList.toggle('visible', incognitoMode);
-  $("statusLeft").textContent = incognitoMode ? 'INCOGNITO ACTIVE' : 'SYSTEM OFFLINE';
-  showToast(incognitoMode
-    ? 'Incognito ON — session not saved. Memory still accessible.'
-    : 'Incognito OFF — sessions resuming.');
-}
-
-// ═══════════════════════════════════════════════════════
-// SESSION MANAGEMENT
-// ═══════════════════════════════════════════════════════
-function newSession() {
-  if (currentSession && history.length && !incognitoMode) {
-    currentSession.messages = [...history];
-    persistSession(currentSession);
-  }
-  history = [];
-  currentSession = {id:genId(), name:'New Session', createdAt:new Date().toISOString(), messages:[]};
-  const _g = pickGreeting();
-  $("thread").innerHTML = `
-    <div class="welcome" id="welcome">
-      <div class="welcome-icon"><img src="/static/jarvis-logo.png" alt="J.A.R.V.I.S"/></div>
-      <h1 id="welcomeHeading">${_g.h}</h1>
-      <p id="welcomeSub">// ${_g.s} //</p>
-      <div class="chips" id="chips"></div>
-    </div>`;
-  bootChips();
+function persistTurn(firstUserText){
+  if(currentSession.admin) currentSession.title = "Administrator session";
+  else if(!currentSession.title && firstUserText) currentSession.title = shorten(firstUserText, 42);
+  currentSession.updated = Date.now();
+  const meta={ id:currentSession.id, title:currentSession.title, updated:currentSession.updated, messages:currentSession.messages.length, admin:!!currentSession.admin };
+  sessions = sessions.filter(s=>s.id!==currentSession.id); sessions.unshift(meta);
   renderSessionList();
-  $("sessionTitle").textContent = 'New Session';
-  setStatus('READY');
+  putSession(currentSession);
+}
+function renderSessionList(){
+  const el=$("sessionList"); if(!el) return;
+  el.innerHTML = sessions.length ? sessions.map(s=>
+    `<div class="session-item ${currentSession&&s.id===currentSession.id?'active':''} ${s.admin?'admin':''}" onclick="loadSession('${s.id}')">
+       <span class="st">${s.admin?'⬡ Administrator session':escH(s.title||"New session")}</span>
+       <button class="session-del" title="Delete" onclick="event.stopPropagation();deleteSession('${s.id}')">✕</button>
+     </div>`).join("") : `<div class="session-empty">No saved sessions yet</div>`;
+}
+async function loadSession(id){
+  const meta=sessions.find(s=>s.id===id);
+  if(meta && meta.admin && !adminAuthed){ _pendingAdminSessionId=id; showAdminModal(); return; }
+  try{
+    const s=await (await fetch("/api/sessions/"+encodeURIComponent(id))).json();
+    if(!s || s.error) return;
+    if(!s.messages) s.messages=[];
+    currentSession=s; history=currentSession.messages; renderHistory(); renderSessionList();
+    if(currentSession.admin) setStatus("Administrator session");
+  }catch(e){}
+}
+async function deleteSession(id){
+  try{ await fetch("/api/sessions/"+encodeURIComponent(id),{method:"DELETE"}); }catch(e){}
+  sessions=sessions.filter(s=>s.id!==id);
+  if(currentSession && currentSession.id===id) newSession(); else renderSessionList();
+}
+function renderHistory(){
+  if(!currentSession.messages.length){ renderWelcome(); return; }
+  $("thread").innerHTML="";
+  for(const m of currentSession.messages){ if(m.role==="user") addUser(m.content); else renderAssistant(m); }
+  scrollDown();
+}
+function renderAssistant(m){
+  const msg=document.createElement("div"); msg.className="msg assistant";
+  const head = m.agent ? `MODULE <b>${cap(m.agent)}</b>` : "JARVIS";
+  msg.innerHTML=`<div class="badge"><span class="dot"></span>${head}</div><div class="answer"></div>`;
+  $("thread").appendChild(msg);
+  renderAnswer(msg.querySelector(".answer"), m.content||"", m.media, m.mediaType||"img", "", true);
+  maybeAddPreview(msg, m.content||"");
+  msg._rawText=m.content||""; try{ msg.insertAdjacentHTML("beforeend", makeCopyBar()); }catch(e){}
 }
 
-function loadSession(id) {
-  // Save current first
-  if (currentSession && history.length && !incognitoMode) {
-    currentSession.messages = [...history];
-    persistSession(currentSession);
-  }
-  const sess = loadSessions().find(s => s.id === id);
-  if (!sess) return;
-  currentSession = sess;
-  history = [...sess.messages];
-  // Render all messages
-  $("thread").innerHTML = '';
-  for (let i = 0; i < history.length; i += 2) {
-    const u = history[i];
-    const a = history[i+1];
-    if (u) addUserBubble(u.content);
-    if (a) {
-      const el = addAssistantShell();
-      el.querySelector('[data-role="answer"]').innerHTML = md(a.content);
-      el.querySelector('[data-role="badge"]').innerHTML = `<span class="dot"></span>JARVIS`;
-    }
-  }
-  renderSessionList();
-  $("sessionTitle").textContent = '// ' + sess.name.toUpperCase();
-  scrollEl.scrollTop = scrollEl.scrollHeight;
-}
-
-
-
-function saveCurrentSession() {
-  if (incognitoMode || !currentSession) return;
-  currentSession.messages = [...history];
-  persistSession(currentSession);
-  renderSessionList();
-}
-
-// Ask the model to summarise the conversation as a session title, then update everywhere
-async function updateSessionTitle() {
-  if (incognitoMode || !currentSession || history.length < 2) return;
-  try {
-    const resp = await fetch('/api/title', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages: history })
-    });
-    const {title} = await resp.json();
-    if (!title) return;
-    currentSession.name = title;
-    $("sessionTitle").textContent = title;
-    saveCurrentSession(); // persist with new name
-  } catch(_) { /* silently ignore — title is non-critical */ }
-}
-
-// ═══════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════
-function bootChips() {
-  const chips = $("chips");
-  if (!chips) return;
-  _currentExamples = pickExamples();
-  chips.innerHTML = _currentExamples.map((e,i) =>
-    `<button class="chip" onclick="useExample(${i})"><span class="k">${e.k}</span>${escH(e.t)}</button>`
-  ).join('');
-}
-
-async function boot() {
-  // Set random greeting on the static welcome screen
-  const _bg = pickGreeting();
-  if ($("welcomeHeading")) $("welcomeHeading").textContent = _bg.h;
-  if ($("welcomeSub"))     $("welcomeSub").textContent     = `// ${_bg.s} //`;
-
-  // Init session
-  currentSession = {id:genId(), name:'New Session', createdAt:new Date().toISOString(), messages:[]};
-  bootChips();
-  renderSessionList();
-
-  // Load agents
-  try {
-    const a = await (await fetch('/api/agents')).json();
-    renderAgentList(a.agents);
-    window._agents = a.agents; // cache
-  } catch(e) {
-    $("agentList").innerHTML = '<div class="no-sess">Backend offline</div>';
-  }
-
-  // Load config
-  try {
-    const cfg = await (await fetch('/api/config')).json();
-    updateFooter(cfg);
-    // Sync provider panel defaults
-    if (cfg.ollama_host) $("ollamaHostInput").value = cfg.ollama_host;
-    if (cfg.ollama_has_key) {
-      $("ollamaKeyInput").placeholder = '●●●● key saved — paste to update';
-    }
-    if (cfg.openai_base_url) $("openaiBaseUrlInput").value = cfg.openai_base_url;
-    $("providerSelect").value = cfg.provider || 'ollama';
-    await onProviderChange(); // loads saved key + model dropdown for current provider
-
-    // Push all locally-stored keys back to the backend (restores keys after server restart)
-    const storedKeys = loadStoredKeys();
-    const keyMap = { groq: 'GROQ', gemini: 'GEMINI', openai: 'OPENAI' };
-    for (const [prov, key] of Object.entries(storedKeys)) {
-      if (key) {
-        fetch('/api/config', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ provider: prov, api_key: key }),
-        }).catch(() => {});
-      }
-    }
-    // Restore the actual active provider after pushing keys
-    fetch('/api/config', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ provider: cfg.provider, model: cfg.model }),
-    }).catch(() => {});
-
-    setStatus('READY');
-  } catch(e) {
-    $("footer").textContent = 'BACKEND OFFLINE';
-    setStatus('OFFLINE');
-  }
-}
-
-function useExample(i) { $("input").value = _currentExamples[i].t; onSend(); }
-
-// ═══════════════════════════════════════════════════════
-// INPUT HANDLERS
-// ═══════════════════════════════════════════════════════
 const inputEl = $("input");
-inputEl.addEventListener("input", () => {
-  inputEl.style.height = "auto";
-  inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + "px";
-});
-inputEl.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); }
-});
+inputEl.addEventListener("input", ()=>{ inputEl.style.height="auto"; inputEl.style.height=Math.min(inputEl.scrollHeight,200)+"px"; });
+inputEl.addEventListener("keydown",(e)=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); onSend(); }});
 
-// ═══════════════════════════════════════════════════════
-// CHAT
-// ═══════════════════════════════════════════════════════
-function addUserBubble(text) {
-  const w = $("welcome"); if (w) w.remove();
-  const el = document.createElement("div");
-  el.className = "msg user";
-  el.innerHTML = `<div class="bubble">${escH(text)}</div>`;
-  $("thread").appendChild(el);
+const COPY_ICON=`<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>`;
+function copyMsg(el){
+  const text=el?._rawText||""; if(!text) return;
+  navigator.clipboard.writeText(text.trim()).then(()=>{
+    const btn=el.querySelector(".copy-btn"); if(!btn) return;
+    const orig=btn.innerHTML; btn.innerHTML="✓ Copied"; btn.classList.add("copied");
+    setTimeout(()=>{ btn.innerHTML=orig; btn.classList.remove("copied"); },2000);
+  }).catch(()=>{});
+}
+function makeCopyBar(){ return `<div class="msg-copy-bar"><button class="copy-btn" onclick="copyMsg(this.closest('.msg'))">${COPY_ICON} Copy</button></div>`; }
+
+function addUser(text){
+  const w=$("welcome"); if(w) w.remove();
+  const el=document.createElement("div"); el.className="msg user";
+  el._rawText=text;
+  el.innerHTML=`<div class="bubble">${escH(text)}</div>${makeCopyBar()}`; $("thread").appendChild(el);
 }
 
-function addAssistantShell() {
-  const el = document.createElement("div");
-  el.className = "msg assistant";
-  el.innerHTML = `
+async function onSend(){
+  let text = inputEl.value.trim();
+  if(!text || streaming) return;
+
+  // Admin intercept
+  if(text.startsWith("//admin")){
+    inputEl.value=""; inputEl.style.height="auto";
+    const cmd = text.slice("//admin".length).trim();
+    if(!adminAuthed){ adminPendingCmd = cmd; showAdminModal(); }
+    else executeAdminCommand(cmd);
+    return;
+  }
+  // Personality capture (admin set personality flow)
+  if(adminPersonalityPending){
+    const scope = adminPersonalityPending; adminPersonalityPending=null;
+    inputEl.value=""; inputEl.style.height="auto";
+    if(scope==="session"){ adminSessionPersonality=text; appendAdminMessage("✓ <b>Session personality</b> set (resets on refresh)."); }
+    else { await adminAction("personality_set",{text}); appendAdminMessage("✓ <b>Global personality</b> saved."); }
+    return;
+  }
+  // Run a saved workflow:  //wf <id> <prompt>
+  let workflowId=null;
+  const wfm = text.match(/^\/\/wf\s+([\w.\-]+)\s+([\s\S]+)$/);
+  if(wfm){ workflowId=wfm[1]; text=wfm[2]; }
+
+  inputEl.value=""; inputEl.style.height="auto";
+  addUser(text + (attachedText?("\n📄 "+attachedText.name):"") + (attachedImage?"\n🖼 image attached":"")); scrollDown();
+  setStatus("PROCESSING…"); $("statusDot").classList.add("active"); $("statusLeft").textContent="SYSTEM ONLINE";
+
+  const msg=document.createElement("div"); msg.className="msg assistant";
+  msg.innerHTML=`
     <div class="badge" data-role="badge"><span class="dots"><span>●</span><span>●</span><span>●</span></span>&nbsp;routing…</div>
     <details class="trace" data-role="trace" style="display:none" open><summary>SYSTEM TRACE</summary><ul></ul></details>
-    <div class="sources" data-role="sources" style="display:none"><div class="head">// Data Sources</div><ol></ol></div>
-    <div class="answer" data-role="answer"></div>
-    <div class="msg-actions" data-role="msg-actions" style="visibility:hidden">
-      <button class="action-btn" data-role="copy-btn" onclick="copyAnswer(this.closest('.msg'))">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>
-        Copy
-      </button>
-      <button class="preview-btn" data-role="preview-btn" style="display:none" onclick="previewCode(this.closest('.msg'))">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="3" width="14" height="10" rx="1.5"/><polyline points="5,7 3,9 5,11"/><polyline points="11,7 13,9 11,11"/></svg>
-        Preview UI
-      </button>
-    </div>`;
-  $("thread").appendChild(el);
-  return el;
-}
+    <div class="sources" data-role="sources" style="display:none"><div class="head">// Sources</div><ol></ol></div>
+    <div class="answer" data-role="answer"></div>`;
+  $("thread").appendChild(msg);
+  const badge=msg.querySelector('[data-role="badge"]'), trace=msg.querySelector('[data-role="trace"]'),
+        traceUl=trace.querySelector("ul"), sources=msg.querySelector('[data-role="sources"]'),
+        sourcesOl=sources.querySelector("ol"), answer=msg.querySelector('[data-role="answer"]');
 
-function highlightAgent(name) {
-  lastRoutedAgent = name;
-  refreshAgentList(); // re-render so .routed class lands on the right agent
-}
+  streaming=true; $("send").disabled=true;
+  let raw="", media=null, mediaType="img", agent="";
 
-function scrollDown() { scrollEl.scrollTop = scrollEl.scrollHeight; }
-function setStatus(s) { $("statusRight").textContent = s; }
+  let sendText = text;
+  if(attachedText) sendText = "[Attached file: "+attachedText.name+"]\n\n"+attachedText.content+"\n\n"+text;
+  const payload={ message:sendText, history: history.map(m=>({role:m.role, content:m.content})) };
+  if(workflowId) payload.workflow=workflowId;
+  else if(selectMode && selectedAgents.length) payload.agents=[...selectedAgents];
+  else if(pinnedAgent) payload.agent=pinnedAgent;
+  if(adminSessionPersonality) payload.session_personality=adminSessionPersonality;
+  if(attachedImage) payload.image_data=attachedImage;
+  clearAttach();
 
-async function onSend() {
-  const text = inputEl.value.trim();
-  if (!text || streaming) return;
-  inputEl.value = ""; inputEl.style.height = "auto";
-
-  // Show the user message as a placeholder title until the AI generates one
-  if (history.length === 0 && currentSession) {
-    const placeholder = shorten(text, 48);
-    currentSession.name = placeholder;
-    $("sessionTitle").textContent = placeholder;
-  }
-
-  addUserBubble(text);
-  scrollDown();
-  setStatus("PROCESSING…");
-
-  const msgEl = addAssistantShell();
-  const badge    = msgEl.querySelector('[data-role="badge"]');
-  const trace    = msgEl.querySelector('[data-role="trace"]');
-  const traceUl  = trace.querySelector("ul");
-  const sources  = msgEl.querySelector('[data-role="sources"]');
-  const sourceOl = sources.querySelector("ol");
-  const answer   = msgEl.querySelector('[data-role="answer"]');
-
-  streaming = true; $("send").disabled = true;
-  $("statusDot").classList.add("active");
-  $("statusLeft").textContent = "SYSTEM ONLINE";
-  let raw = "", agent = "";
-  // Track media attachments in plain vars — dataset is fragile with camelCase keys
-  let mediaImg = null, mediaVideo = null, mediaAudio = null;
-  let mediaVideoMime = "video/mp4", mediaAudioMime = "audio/wav";
-  let mediaAlt = "";
-
-  // Build payload
-  const payload = {
-    message: text,
-    history: history.map(m => ({role:m.role, content:m.content})),
-  };
-  if (selectMode && selectedAgents.length > 0) {
-    payload.agents = [...selectedAgents];          // multi-agent pipeline
-  } else if (pinnedAgent) {
-    payload.agent  = pinnedAgent;                  // single-agent override
-  }
-  const memCtx = buildMemoryContext();
-  if (memCtx)           payload.memory_context = memCtx;
-  const userProfile = getUserProfile();
-  if (userProfile)      payload.user_profile   = userProfile;
-  if (attachedImage)    payload.image_data     = attachedImage.dataUrl;
-  clearAttachment(); // clear preview immediately so it doesn't re-send
-
-  try {
-    const resp = await fetch("/api/chat", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(payload),
-    });
-    if (!resp.ok || !resp.body) throw new Error("Request failed (" + resp.status + ")");
-
-    const reader  = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, {stream:true});
-      let idx;
-      while ((idx = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, idx).trim();
-        buf = buf.slice(idx + 1);
-        if (!line) continue;
-        let ev; try { ev = JSON.parse(line); } catch { continue; }
-
-        if (ev.type === "route") {
-          agent = ev.agent;
-          const agentList = ev.agents || [ev.agent];
-          if (agentList.length > 1) {
-            badge.innerHTML = `<span class="dot"></span>PIPELINE <b>${agentList.map(a=>cap(a)).join(' → ').toUpperCase()}</b>`;
-            setStatus("MULTI-AGENT PIPELINE ACTIVE");
-          } else {
-            badge.innerHTML = `<span class="dot"></span>MODULE <b>${cap(agent).toUpperCase()}</b> ACTIVATED`;
-            setStatus(agent.toUpperCase() + " AGENT ACTIVE");
-          }
+  try{
+    const resp=await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+    if(!resp.ok||!resp.body) throw new Error("Request failed ("+resp.status+")");
+    const reader=resp.body.getReader(), dec=new TextDecoder(); let buf="";
+    while(true){
+      const {done,value}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true}); let idx;
+      while((idx=buf.indexOf("\n"))>=0){
+        const line=buf.slice(0,idx).trim(); buf=buf.slice(idx+1); if(!line) continue;
+        let ev; try{ ev=JSON.parse(line); }catch{ continue; }
+        if(ev.type==="route"){
+          agent=ev.agent; const list=ev.agents||[ev.agent];
+          if(ev.workflow){ badge.innerHTML=`<span class="dot"></span>WORKFLOW <b>${escH(ev.workflow)}</b> · ${list.map(cap).join(" → ")}`; setStatus("WORKFLOW RUNNING"); }
+          else if(list.length>1){ badge.innerHTML=`<span class="dot"></span>PIPELINE <b>${list.map(cap).join(" → ")}</b>`; setStatus("MULTI-AGENT PIPELINE"); }
+          else { badge.innerHTML=`<span class="dot"></span>MODULE <b>${cap(agent)}</b> ACTIVE`; setStatus(cap(agent)+" agent active"); }
           highlightAgent(agent);
-        } else if (ev.type === "agent_section") {
-          // Inject a section divider marker into raw — renderAnswer will convert it
-          if (ev.index > 0) raw += "\n\n";
-          raw += `[[AGENT_SECTION:${ev.agent}]]`;
-          raw += "\n\n";
-          // Update the badge to show the current running agent
-          badge.innerHTML = `<span class="dot"></span>MODULE <b>${cap(ev.agent).toUpperCase()}</b> ACTIVE`;
-          highlightAgent(ev.agent);
-        } else if (ev.type === "step") {
-          trace.style.display = "block";
-          const li = document.createElement("li");
-          if (ev.detail?.length) {
-            li.innerHTML = escH(ev.text) + ev.detail.map(d => `<span class="sub">· ${escH(d)}</span>`).join("");
-          } else { li.textContent = ev.text; }
+        } else if(ev.type==="synthesizing"){
+          badge.innerHTML=`<span class="dot"></span>SYNTHESISING <b>${(ev.agents||[]).map(cap).join(" · ")}</b>`; setStatus("Synthesising…");
+        } else if(ev.type==="step"){
+          trace.style.display="block"; const li=document.createElement("li");
+          if(ev.detail&&ev.detail.length) li.innerHTML=escH(ev.text)+ev.detail.map(d=>`<span class="sub">· ${escH(d)}</span>`).join("");
+          else li.textContent=ev.text;
           traceUl.appendChild(li);
-        } else if (ev.type === "sources") {
-          sources.style.display = "block";
-          sourceOl.innerHTML = ev.items.map(s =>
-            `<li><a href="${escA(s.url)}" target="_blank" rel="noopener">${escH(s.title||s.url)}</a></li>`
-          ).join("");
-        } else if (ev.type === "image") {
-          raw += "\n\n";
-          mediaImg = ev.url; mediaAlt = ev.alt || "";
-          addToGallery(ev.url, ev.alt || text); // auto-save to gallery
-          renderAnswer(answer, raw, {img:mediaImg, videoUrl:mediaVideo, videoMime:mediaVideoMime, audioUrl:mediaAudio, audioMime:mediaAudioMime, alt:mediaAlt});
-        } else if (ev.type === "video") {
-          raw += "\n\n";
-          mediaVideo = ev.url; mediaVideoMime = ev.mime || "video/mp4"; mediaAlt = ev.alt || "";
-          renderAnswer(answer, raw, {img:mediaImg, videoUrl:mediaVideo, videoMime:mediaVideoMime, audioUrl:mediaAudio, audioMime:mediaAudioMime, alt:mediaAlt});
-        } else if (ev.type === "audio") {
-          raw += "\n\n";
-          mediaAudio = ev.url; mediaAudioMime = ev.mime || "audio/wav"; mediaAlt = ev.alt || "";
-          renderAnswer(answer, raw, {img:mediaImg, videoUrl:mediaVideo, videoMime:mediaVideoMime, audioUrl:mediaAudio, audioMime:mediaAudioMime, alt:mediaAlt});
-        } else if (ev.type === "token") {
-          raw += ev.text;
-          renderAnswer(answer, raw, {img:mediaImg, videoUrl:mediaVideo, videoMime:mediaVideoMime, audioUrl:mediaAudio, audioMime:mediaAudioMime, alt:mediaAlt});
-        }
+        } else if(ev.type==="sources"){
+          sources.style.display="block";
+          sourcesOl.innerHTML=(ev.items||[]).map(s=>`<li><a href="${escA(s.url)}" target="_blank" rel="noopener">${escH(s.title||s.url)}</a></li>`).join("");
+        } else if(ev.type==="image"){ raw+="\n\n"; media=ev.url; mediaType="img"; saveToGallery(ev.url, text, !!(currentSession&&currentSession.admin)); renderAnswer(answer,raw,media,mediaType,ev.alt);
+        } else if(ev.type==="video"){ raw+="\n\n"; media=ev.url; mediaType="video"; renderAnswer(answer,raw,media,mediaType,ev.alt);
+        } else if(ev.type==="token"){ raw+=ev.text; renderAnswer(answer,raw,media,mediaType,""); }
         scrollDown();
       }
     }
-  } catch(e) {
-    answer.innerHTML = `<p style="color:var(--red);font-family:var(--mono);font-size:13px">⚠ ERROR: ${escH(e.message)}. Verify backend connection.</p>`;
+  }catch(e){
+    answer.innerHTML=`<p style="color:#f87171">⚠️ ${escH(e.message)}. Is the backend running?</p>`;
   }
-
-  renderAnswer(answer, raw, {img:mediaImg, videoUrl:mediaVideo, videoMime:mediaVideoMime, audioUrl:mediaAudio, audioMime:mediaAudioMime, alt:mediaAlt}, true);
-  history.push({role:"user",    content:text});
-  history.push({role:"assistant", content:raw});
-  streaming = false; $("send").disabled = false;
-  $("statusDot").classList.remove("active");
-  $("statusLeft").textContent = "SYSTEM OFFLINE";
-  setStatus("AWAITING INPUT");
+  renderAnswer(answer,raw,media,mediaType,"",true);
+  maybeAddPreview(msg, raw);
+  // Add copy button to AI response
+  msg._rawText=raw;
+  msg.insertAdjacentHTML("beforeend", makeCopyBar());
+  history.push({role:"user",content:text});
+  history.push({role:"assistant",content:raw,media:media,mediaType:mediaType,agent:agent});
+  persistTurn(text);
+  streaming=false; $("send").disabled=false; setStatus("Ready");
+  if(speakEnabled && raw) speak(raw);
   scrollDown();
-
-  // Persist session then update title and personality in background
-  saveCurrentSession();
-  updateSessionTitle();       // non-blocking — updates name asynchronously
-  refreshPersonalityProfile(); // non-blocking — refreshes user profile if enough new msgs
 }
 
-function renderAnswer(el, text, media, final) {
-  // Split on [[AGENT_SECTION:name]] markers before markdown so escH() doesn't eat the divider tags
-  const parts = text.split(/\[\[AGENT_SECTION:([^\]]+)\]\]/);
-  let html = '';
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 0) {
-      html += md(parts[i]);
-    } else {
-      html += `<div class="agent-divider">▶ ${escH(parts[i]).toUpperCase()} MODULE</div>`;
-    }
+function renderAnswer(el,text,media,type,alt,final){
+  let html=md(text);
+  if(!final && text) html+=`<span class="cursor"></span>`;
+  if(media&&type==="img")   html+=`<img src="${escA(media)}" alt="${escA(alt||"")}" loading="lazy">`;
+  if(media&&type==="video") html+=`<video src="${escA(media)}" controls></video>`;
+  el.innerHTML=html;
+}
+
+/* voice */
+function toggleSpeak(){ speakEnabled=!speakEnabled; $("speak").classList.toggle("on",speakEnabled); setStatus(speakEnabled?"Voice replies ON":"Voice replies off"); if(!speakEnabled&&window.speechSynthesis) speechSynthesis.cancel(); }
+function speak(text){
+  if(!window.speechSynthesis) return;
+  const clean=text.replace(/```[\s\S]*?```/g," — code block — ").replace(/[#*`_>\[\]]/g,"").slice(0,700);
+  const u=new SpeechSynthesisUtterance(clean);
+  const v=(speechSynthesis.getVoices()||[]).find(v=>/en-GB|Daniel|Arthur|Oliver/i.test(v.name+" "+v.lang));
+  if(v) u.voice=v; u.rate=1.02; u.pitch=.95; speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function toggleMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ setStatus("Voice input not supported in this browser"); return; }
+  if(recog){ recog.stop(); return; }
+  recog=new SR(); recog.lang="en-US"; recog.interimResults=true; recog.continuous=false;
+  recog.onresult=(e)=>{ let t=""; for(const r of e.results) t+=r[0].transcript; inputEl.value=t; };
+  recog.onend=()=>{ $("mic").classList.remove("on"); recog=null; };
+  recog.onerror=()=>{ $("mic").classList.remove("on"); recog=null; };
+  recog.start(); $("mic").classList.add("on"); setStatus("Listening…");
+}
+
+/* tiny markdown */
+function md(src){ if(!src) return ""; const segs=src.split("```"); let out="";
+  for(let i=0;i<segs.length;i++){ if(i%2===1){ let code=segs[i].replace(/^[a-zA-Z0-9_:+\/.\-]*\n/,""); out+=`<pre><code>${escH(code)}</code></pre>`; } else out+=inline(segs[i]); } return out; }
+function inline(text){ const lines=escH(text).split("\n"); let html="",list=null;
+  const flush=()=>{ if(list){ html+=`</${list}>`; list=null; } };
+  for(let line of lines){ let m;
+    if((m=line.match(/^\s*#{1,3}\s+(.*)$/))){ flush(); const n=Math.min(line.trim().match(/^#+/)[0].length,3); html+=`<h${n}>${fmt(m[1])}</h${n}>`; }
+    else if((m=line.match(/^\s*[-*]\s+(.*)$/))){ if(list!=="ul"){ flush(); html+="<ul>"; list="ul"; } html+=`<li>${fmt(m[1])}</li>`; }
+    else if((m=line.match(/^\s*\d+\.\s+(.*)$/))){ if(list!=="ol"){ flush(); html+="<ol>"; list="ol"; } html+=`<li>${fmt(m[1])}</li>`; }
+    else if(line.trim()===""){ flush(); }
+    else { flush(); html+=`<p>${fmt(line)}</p>`; } }
+  flush(); return html; }
+function fmt(s){ return s.replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*]+)\*/g,"$1<i>$2</i>").replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>'); }
+
+/* utils */
+function escH(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escA(s){ return escH(s).replace(/"/g,"&quot;"); }
+function cap(s){ s=(s||"").replace(/_/g," "); return s.charAt(0).toUpperCase()+s.slice(1); }
+function shorten(s,n){ return s&&s.length>n ? s.slice(0,n)+"…" : (s||""); }
+
+/* ===================== ADMIN ===================== */
+let adminAuthed=false, adminPassword="", adminPendingCmd=null, adminChatHistory=[], adminPersonalityPending=null, adminSessionPersonality="", _pendingAdminSessionId=null;
+const ADMIN_COMMAND_DEFS=[
+  {label:"STATUS", cmd:"status", desc:"Provider, model, persona", fill:null},
+  {label:"PERSONALITY", cmd:"personality", desc:"View persona override", fill:null},
+  {label:"PERSONALITY SET (SESSION)", cmd:"personality set session", desc:"This session only", fill:null},
+  {label:"PERSONALITY SET (GLOBAL)", cmd:"personality set global", desc:"Permanent, all chats", fill:null},
+  {label:"PERSONALITY CLEAR", cmd:"personality clear global", desc:"Reset to default JARVIS", fill:null},
+  {label:"MODEL", cmd:"model", desc:"View provider / model", fill:null},
+  {label:"MODEL SET", cmd:null, desc:"Change provider & model", fill:"//admin model set "},
+  {label:"CHANGE PASSWORD", cmd:null, desc:"Set a new admin password", fill:"//admin cp "},
+  {label:"ADMIN CHAT", cmd:null, desc:"Natural-language admin", fill:"//admin chat "},
+  {label:"WORKFLOWS", cmd:"wf", desc:"List editable workflows", fill:null},
+  {label:"WORKFLOW STUDIO", cmd:"wf studio", desc:"Visual workflow editor", fill:null},
+  {label:"WORKFLOW EDIT", cmd:null, desc:"Edit a workflow in English", fill:"//admin wf edit default "},
+  {label:"SUBSCRIBERS", cmd:"subs", desc:"View & export newsletter emails", fill:null},
+];
+/* ===================== ATTACH + GALLERY ===================== */
+function onFilePicked(e){
+  const f=e.target && e.target.files && e.target.files[0]; if(e.target) e.target.value="";
+  if(!f) return;
+  const r=new FileReader();
+  if(f.type && f.type.startsWith("image/")){
+    r.onload=()=>{ attachedImage=r.result; attachedText=null; showAttach("🖼 "+f.name); };
+    r.readAsDataURL(f);
+  } else {
+    r.onload=()=>{ attachedText={name:f.name, content:String(r.result||"").slice(0,20000)}; attachedImage=null; showAttach("📄 "+f.name); };
+    r.readAsText(f);
   }
-  if (!final && text) html += `<span class="cursor"></span>`;
-
-  if (media && media.img) {
-    const safeUrl = media.img.replace(/"/g, '%22');
-    const safeAlt = escH(media.alt || 'generated image');
-    // Wrap in .img-wrap so the download overlay can float over it
-    html += `
-      <div class="img-wrap">
-        <img src="${safeUrl}" alt="${safeAlt}" loading="eager" style="min-height:40px"
-          onerror="this.outerHTML='<div style=\\'padding:10px;font-family:monospace;font-size:12px;color:#f87171\\'>⚠ Image failed to load.</div>'">
-        <div class="img-overlay">
-          <select class="fmt-select" title="Choose format">
-            <option value="image/png">PNG</option>
-            <option value="image/jpeg">JPEG</option>
-            <option value="image/webp">WebP</option>
-          </select>
-          <button class="dl-btn" onclick="downloadImage(this)">↓ Save</button>
-        </div>
-      </div>`;
-  }
-
-  if (media && media.videoUrl) {
-    html += `
-      <div class="media-player video-player">
-        <video controls preload="auto" style="max-width:100%;border-radius:8px;margin-top:10px;display:block;">
-          <source src="${media.videoUrl}" type="${media.videoMime||'video/mp4'}">
-          Your browser does not support HTML5 video.
-        </video>
-        <p class="media-caption">${escH(media.alt||'Generated video')}</p>
-      </div>`;
-  }
-
-  if (media && media.audioUrl) {
-    html += `
-      <div class="media-player audio-player">
-        <audio controls preload="auto" style="width:100%;margin-top:10px;display:block;">
-          <source src="${media.audioUrl}" type="${media.audioMime||'audio/wav'}">
-          Your browser does not support HTML5 audio.
-        </audio>
-        <p class="media-caption">${escH(media.alt||'Generated music')}</p>
-      </div>`;
-  }
-
-  el.innerHTML = html;
-
-  // Store raw text on the message element so copyAnswer() / previewCode() can use it
-  const msgEl = el.closest('.msg');
-  if (msgEl) {
-    msgEl._rawText = text;
-    const actionsEl   = msgEl.querySelector('[data-role="msg-actions"]');
-    const previewBtn  = msgEl.querySelector('[data-role="preview-btn"]');
-    if (actionsEl) {
-      actionsEl.style.visibility = (final && text.trim()) ? 'visible' : 'hidden';
-    }
-    if (previewBtn && final) {
-      const html = buildPreviewHTML(text);
-      msgEl._previewHTML = html;
-      previewBtn.style.display = html ? 'flex' : 'none';
-    }
-  }
 }
-
-// ═══════════════════════════════════════════════════════
-// MARKDOWN
-// ═══════════════════════════════════════════════════════
-function md(src) {
-  if (!src) return "";
-  const segs = src.split("```");
-  let out = "";
-  for (let i = 0; i < segs.length; i++) {
-    if (i % 2 === 1) {
-      let code = segs[i].replace(/^[a-zA-Z0-9_+-]*\n/, "");
-      out += `<pre><code>${escH(code)}</code></pre>`;
-    } else {
-      out += inline(segs[i]);
-    }
-  }
-  return out;
+function showAttach(label){ const p=$("attachPreview"); p.style.display="flex"; p.innerHTML=`<span>${escH(label)}</span><button onclick="clearAttach()" title="Remove">✕</button>`; }
+function clearAttach(){ attachedImage=null; attachedText=null; const p=$("attachPreview"); if(p){ p.style.display="none"; p.innerHTML=""; } }
+function saveToGallery(url, prompt, admin){
+  if(!url) return;
+  try{ fetch("/api/gallery",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:url, prompt:prompt||"", admin:!!admin})}); }catch(e){}
 }
-function inline(text) {
-  const lines = escH(text).split("\n");
-  let html = "", list = null;
-  const flush = () => { if(list){html+=`</${list}>`;list=null;} };
-  for (let line of lines) {
-    let m;
-    if ((m = line.match(/^\s*#{1,3}\s+(.*)$/))) {
-      flush();
-      const n = Math.min(line.trim().match(/^#+/)[0].length, 3);
-      html += `<h${n}>${fmt(m[1])}</h${n}>`;
-    } else if ((m = line.match(/^\s*[-*]\s+(.*)$/))) {
-      if(list!=="ul"){flush();html+="<ul>";list="ul";}
-      html += `<li>${fmt(m[1])}</li>`;
-    } else if ((m = line.match(/^\s*\d+\.\s+(.*)$/))) {
-      if(list!=="ol"){flush();html+="<ol>";list="ol";}
-      html += `<li>${fmt(m[1])}</li>`;
-    } else if (line.trim() === "") {
-      flush();
-    } else {
-      flush(); html += `<p>${fmt(line)}</p>`;
-    }
-  }
-  flush();
-  return html;
+async function openGallery(admin){
+  if(admin && !adminAuthed) admin=false;
+  $("galleryModal").classList.add("show");
+  $("galTabAdmin").style.display = adminAuthed ? "inline-block" : "none";
+  $("galTabGeneral").classList.toggle("activeTab", !admin);
+  $("galTabAdmin").classList.toggle("activeTab", !!admin);
+  $("galleryTitle").textContent = admin ? "🔒 ADMINISTRATOR GALLERY" : "🖼 IMAGE GALLERY";
+  let items=[];
+  if(admin){ const d=await adminAction("gallery_admin"); items=d.items||[]; }
+  else { try{ const d=await (await fetch("/api/gallery")).json(); items=d.items||[]; }catch(e){} }
+  renderGallery(items, !!admin);
 }
-function fmt(s) {
-  return s
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-    .replace(/(^|[^*])\*([^*]+)\*/g, "$1<i>$2</i>")
-    .replace(/_([^_]+)_/g, "<i>$1</i>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+function renderGallery(items, admin){
+  const g=$("galleryGrid");
+  g.innerHTML = (items && items.length) ? items.map(it=>
+    `<div class="gal-item">
+       <a href="${escA(it.src)}" target="_blank" rel="noopener"><img src="${escA(it.src)}" alt="${escA(it.prompt||'')}" loading="lazy"></a>
+       <button class="gal-del" title="Delete" onclick="delGallery('${it.id}', ${admin?'true':'false'})">✕</button>
+       <div class="gal-cap">${escH((it.prompt||'').slice(0,70))}</div>
+     </div>`).join("") : `<div class="gallery-empty">No images yet — generate one and it'll appear here.</div>`;
 }
-
-// ═══════════════════════════════════════════════════════
-// IMAGE ATTACHMENT (upload for editing)
-// ═══════════════════════════════════════════════════════
-let attachedImage = null; // { dataUrl, name, mime }
-
-function onFileSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) { showToast('Please select an image file'); return; }
-  if (file.size > 12 * 1024 * 1024) { showToast('Image too large — max 12 MB'); return; }
-  const reader = new FileReader();
-  reader.onload = ev => {
-    attachedImage = { dataUrl: ev.target.result, name: file.name, mime: file.type };
-    $('attachThumbImg').src = ev.target.result;
-    $('attachLabel').textContent = file.name + ' · describe your edit below';
-    $('attachPreview').classList.add('visible');
-    $('input').placeholder = 'Describe what to change in this image…';
-    $('input').focus();
-  };
-  reader.readAsDataURL(file);
-  e.target.value = ''; // reset so the same file can be re-selected
+async function delGallery(id, admin){
+  try{ if(admin){ await adminAction("gallery_delete",{id}); } else { await fetch("/api/gallery/"+encodeURIComponent(id),{method:"DELETE"}); } }catch(e){}
+  openGallery(admin);
 }
+function closeGallery(){ $("galleryModal").classList.remove("show"); }
 
-function clearAttachment() {
-  attachedImage = null;
-  $('attachPreview').classList.remove('visible');
-  $('attachThumbImg').src = '';
-  $('input').placeholder = 'Enter command — coding, writing, analysis, research, or image generation…';
+function showAdminModal(){ $("adminModal").classList.add("show"); setTimeout(()=>$("adminPwInput").focus(),50); }
+function closeAdminModal(){ $("adminModal").classList.remove("show"); $("adminPwInput").value=""; $("adminPwErr").textContent=""; }
+async function submitAdminAuth(){
+  const pw=$("adminPwInput").value; $("adminPwErr").textContent="";
+  try{
+    const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw,action:"auth"})});
+    if(r.status===401){ $("adminPwErr").textContent="✗ Wrong password"; $("adminPwInput").value=""; $("adminPwInput").focus(); return; }
+    adminAuthed=true; adminPassword=pw; closeAdminModal();
+    if(_pendingAdminSessionId){ const sid=_pendingAdminSessionId; _pendingAdminSessionId=null; loadSession(sid); return; }
+    currentSession = blankSession(); currentSession.admin=true; currentSession.title="Administrator session";
+    history = currentSession.messages;
+    $("thread").innerHTML=""; showAdminWelcome();
+    persistTurn(); renderSessionList();
+    const pending=adminPendingCmd; adminPendingCmd=null;
+    if(pending) executeAdminCommand(pending);
+  }catch(e){ $("adminPwErr").textContent="✗ Backend unreachable"; }
 }
-
-// ═══════════════════════════════════════════════════════
-// CODE PREVIEW PANEL
-// ═══════════════════════════════════════════════════════
-let _previewHTML = '';
-
-function buildPreviewHTML(raw) {
-  const clean = raw.replace(/\[\[AGENT_SECTION:[^\]]+\]\]/g, '');
-
-  // ── Parse named file blocks (multiple heading formats) ──────────────────
-  const files = {};
-  let m;
-
-  // Format A: ### `filename.ext`  (coding agent's canonical output)
-  const re1 = /###\s*`([^`\n]+\.[a-zA-Z0-9]+)`[^\n]*\n```(\w*)\n([\s\S]*?)```/g;
-  while ((m = re1.exec(clean)) !== null)
-    files[m[1].trim()] = { lang: (m[2]||'').toLowerCase(), code: m[3] };
-
-  // Format B: **`filename.ext`** or **filename.ext**
-  const re2 = /\*\*`?([^`*\n]+\.[a-zA-Z0-9]+)`?\*\*[^\n]*\n```(\w*)\n([\s\S]*?)```/g;
-  while ((m = re2.exec(clean)) !== null) {
-    const k = m[1].trim();
-    if (!files[k]) files[k] = { lang: (m[2]||'').toLowerCase(), code: m[3] };
-  }
-
-  // Format C: ## filename.ext  (any heading level)
-  const re3 = /^#{1,4}\s+([^\n`*]+\.[a-zA-Z0-9]+)\s*\n```(\w*)\n([\s\S]*?)```/gm;
-  while ((m = re3.exec(clean)) !== null) {
-    const k = m[1].trim();
-    if (!files[k]) files[k] = { lang: (m[2]||'').toLowerCase(), code: m[3] };
-  }
-
-  // ── Parse anonymous code blocks (dedup against named) ───────────────────
-  const namedCodes = new Set(Object.values(files).map(f => f.code));
-  const anon = [];
-  const reA = /```(\w+)\n([\s\S]*?)```/g;
-  while ((m = reA.exec(clean)) !== null)
-    if (!namedCodes.has(m[2]))
-      anon.push({ lang: (m[1]||'').toLowerCase(), code: m[2] });
-
-  if (!Object.keys(files).length && !anon.length) return null;
-
-  // ── Categorize ───────────────────────────────────────────────────────────
-  const byExt = (...exts) =>
-    Object.entries(files).filter(([n]) => exts.some(e => n.toLowerCase().endsWith(e)));
-
-  const htmlFiles = byExt('.html', '.htm');
-  const cssFiles  = byExt('.css');
-  // Client-side JS: exclude files whose code uses Node-only APIs
-  const jsFiles   = byExt('.js').filter(([, f]) =>
-    !f.code.includes('require(') && !f.code.includes('module.exports') &&
-    !f.code.includes('process.env') && !f.code.includes('__dirname'));
-
-  const jsxFiles  = byExt('.jsx', '.tsx');
-
-  const anonHtml = anon.filter(b => b.lang === 'html');
-  const anonCss  = anon.filter(b => b.lang === 'css');
-  const anonJs   = anon.filter(b => (b.lang==='js'||b.lang==='javascript') &&
-    !b.code.includes('require(') && !b.code.includes('module.exports'));
-  const anonJsx  = anon.filter(b => b.lang==='jsx' || b.lang==='tsx');
-
-  // ── Find the main HTML entry point ───────────────────────────────────────
-  const HTML_PRIORITY = ['index.html','index.htm','app.html','main.html','template.html'];
-  const sortedHtml = [...htmlFiles].sort(([a],[b]) => {
-    const ai = HTML_PRIORITY.findIndex(p => a.toLowerCase().endsWith(p));
-    const bi = HTML_PRIORITY.findIndex(p => b.toLowerCase().endsWith(p));
-    return (ai<0?99:ai) - (bi<0?99:bi);
-  });
-
-  let mainHtml = sortedHtml.length ? sortedHtml[0][1].code
-    : (anonHtml.find(b => b.code.includes('<!DOCTYPE') || b.code.includes('<html'))?.code
-       || (anonHtml[0]?.code ?? null));
-
-  if (mainHtml) {
-    // Collect ALL CSS and ALL JS found
-    const allCss = [
-      ...cssFiles.map(([,f]) => f.code),
-      ...anonCss.map(b => b.code),
-    ].join('\n\n');
-
-    const allJs = [
-      ...jsFiles.map(([,f]) => f.code),
-      ...anonJs.map(b => b.code),
-    ].join('\n\n');
-
-    // ── Remove all unresolvable external refs (they'd 404 without a server) ──
-    mainHtml = mainHtml
-      .replace(/<link[^>]+rel=["']stylesheet["'][^>]*\/?>/gi, '')
-      .replace(/<link[^>]+href=["'][^"']+\.css["'][^>]*\/?>/gi, '')
-      .replace(/<script[^>]+src=["'][^"']+["'][^>]*><\/script>/gi, '');
-
-    // ── Inject CSS before </head> ──────────────────────────────────────────
-    if (allCss.trim()) {
-      const styleTag = `<style>\n${allCss}\n</style>`;
-      mainHtml = mainHtml.includes('</head>')
-        ? mainHtml.replace('</head>', styleTag + '\n</head>')
-        : styleTag + '\n' + mainHtml;
-    }
-
-    // ── Inject JS before </body> ───────────────────────────────────────────
-    if (allJs.trim()) {
-      const scriptTag = `<${'script'}>\n${allJs}\n</${'script'}>`;
-      mainHtml = mainHtml.includes('</body>')
-        ? mainHtml.replace('</body>', scriptTag + '\n</body>')
-        : mainHtml + '\n' + scriptTag;
-    }
-
-    // ── Ensure charset + viewport ──────────────────────────────────────────
-    if (!mainHtml.includes('charset')) {
-      mainHtml = mainHtml.replace(/<head>/i, '<head>\n<meta charset="UTF-8">');
-    }
-    if (!mainHtml.includes('viewport')) {
-      mainHtml = mainHtml.replace(/<head>/i,
-        '<head>\n<meta name="viewport" content="width=device-width,initial-scale=1">');
-    }
-
-    return mainHtml;
-  }
-
-  // ── No HTML file — assemble from fragments ────────────────────────────────
-  const frag   = anonHtml[0]?.code || '';
-  const cssCode = cssFiles[0]?.[1]?.code || anonCss[0]?.code || '';
-  const jsCode  = jsFiles[0]?.[1]?.code  || anonJs[0]?.code  || '';
-
-  if (frag || cssCode || jsCode) {
-    return `<!DOCTYPE html><html><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{font-family:system-ui,sans-serif;margin:0;padding:16px;box-sizing:border-box}
-${cssCode}</style>
-</head><body>
-${frag || '<div id="root"></div>'}
-<${'script'}>${jsCode}</${'script'}>
-</body></html>`;
-  }
-
-  // ── React / JSX ───────────────────────────────────────────────────────────
-  const allJsx = [
-    ...jsxFiles.map(([,f]) => f.code),
-    ...anonJsx.map(b => b.code),
-  ];
-  if (allJsx.length) {
-    const jsx = allJsx.join('\n\n');
-    const sc  = 'script';
-    const cdn = (lib, file) =>
-      `https://cdnjs.cloudflare.com/ajax/libs/${lib}/${file}`;
-    return `<!DOCTYPE html><html><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<${sc} src="${cdn('react/18.2.0/umd','react.development.min.js')}"></${sc}>
-<${sc} src="${cdn('react-dom/18.2.0/umd','react-dom.development.min.js')}"></${sc}>
-<${sc} src="${cdn('babel-standalone/7.23.2','babel.min.js')}"></${sc}>
-<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif}</style>
-</head><body><div id="root"></div>
-<${sc} type="text/babel">
-${jsx}
-try{
-  const C=typeof App!=='undefined'?App:typeof default_1!=='undefined'?default_1:null;
-  if(C) ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(C));
-}catch(e){document.getElementById('root').textContent='Render error: '+e.message;}
-</${sc}></body></html>`;
-  }
-
-  // ── Fallback: code file viewer ────────────────────────────────────────────
-  return buildCodeViewer(files, anon);
+async function adminAction(action,data={}){
+  try{ const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:adminPassword,action,data})}); return await r.json(); }
+  catch(e){ return {error:String(e)}; }
 }
-
-function buildCodeViewer(files, anonBlocks) {
-  const _e = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const entries = [
-    ...Object.entries(files),
-    ...anonBlocks.map((b, i) => [`snippet_${i+1}.${b.lang || 'txt'}`, b]),
-  ];
-  if (!entries.length) return null;
-
-  const langCol = {python:'#4ade80',py:'#4ade80',javascript:'#fbbf24',js:'#fbbf24',
-    html:'#60a5fa',htm:'#60a5fa',css:'#c084fc',bash:'#f87171',sh:'#f87171',
-    json:'#34d399',typescript:'#38bdf8',ts:'#38bdf8',sql:'#fb923c',go:'#67e8f9'};
-
-  const tabs = entries.map(([name, f], i) => {
-    const lang = f.lang || name.split('.').pop() || 'txt';
-    const col  = langCol[lang] || '#94a3b8';
-    return `<button class="fv-tab${i===0?' active':''}" onclick="show(${i})" data-col="${col}"
-      style="${i===0?`color:${col};border-bottom-color:${col}`:''}">
-      ${_e(name)}</button>`;
-  }).join('');
-
-  const panels = entries.map(([, f], i) =>
-    `<div class="fv-panel${i===0?' active':''}" id="p${i}"><pre><code>${_e(f.code)}</code></pre></div>`
-  ).join('');
-
-  const hasBackend = entries.some(([n]) => /\.(py|go|rs|rb|php|java)$/.test(n));
-  const notice = hasBackend
-    ? `<div class="fv-notice">⚡ Backend files require a local server — copy the files and follow the setup instructions.</div>` : '';
-
-  return `<!DOCTYPE html><html><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:monospace;background:#0f0f13;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.hdr{padding:8px 14px;background:#1a1a2e;border-bottom:1px solid #2a2a40;font-size:10px;letter-spacing:.1em;color:#7c85a2}
-.tabs{display:flex;gap:0;background:#141420;border-bottom:1px solid #2a2a40;overflow-x:auto;flex-shrink:0}
-.tabs::-webkit-scrollbar{height:3px}.tabs::-webkit-scrollbar-thumb{background:#3a3a55}
-.fv-tab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 14px;
-  font-family:monospace;font-size:11px;color:#7c85a2;cursor:pointer;white-space:nowrap;transition:all .15s}
-.fv-tab:hover{color:#c4c9d9;background:rgba(255,255,255,.03)}
-.content{flex:1;overflow:hidden}
-.fv-panel{display:none;height:100%;overflow:auto;padding:16px 20px}
-.fv-panel.active{display:block}
-pre{font-size:12.5px;line-height:1.7;color:#cbd5e1;white-space:pre;tab-size:2}
-.fv-panel::-webkit-scrollbar{width:6px}.fv-panel::-webkit-scrollbar-thumb{background:#3a3a55;border-radius:3px}
-.fv-notice{padding:7px 14px;background:rgba(251,191,36,.07);border-top:1px solid rgba(251,191,36,.18);
-  font-size:10.5px;color:#fbbf24;letter-spacing:.04em;flex-shrink:0}
-</style></head>
-<body>
-<div class="hdr">// JARVIS CODE VIEWER &nbsp;·&nbsp; ${entries.length} FILE${entries.length!==1?'S':''}</div>
-<div class="tabs">${tabs}</div>
-<div class="content">${panels}</div>
-${notice}
-<script>
-function show(i){
-  document.querySelectorAll('.fv-tab').forEach((t,j)=>{
-    const on=j===i, col=t.dataset.col||'#a78bfa';
-    t.classList.toggle('active',on);
-    t.style.color=on?col:''; t.style.borderBottomColor=on?col:'transparent';
-  });
-  document.querySelectorAll('.fv-panel').forEach((p,j)=>p.classList.toggle('active',j===i));
-}
-<\/script>
-</body></html>`;
-}
-
-function previewCode(msgEl) {
-  const html = msgEl?._previewHTML;
-  if (!html) return;
-  _previewHTML = html;
-  const frame = $('previewFrame');
-  frame.srcdoc = html;
-  $('previewPanel').classList.add('open');
-}
-
-function refreshPreview() {
-  const frame = $('previewFrame');
-  frame.srcdoc = '';
-  setTimeout(() => { frame.srcdoc = _previewHTML; }, 50);
-}
-
-function openPreviewTab() {
-  const blob = new Blob([_previewHTML], { type: 'text/html' });
-  const url  = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
-
-function closePreview() {
-  $('previewPanel').classList.remove('open');
-}
-
-// ═══════════════════════════════════════════════════════
-// IMAGE GALLERY
-// ═══════════════════════════════════════════════════════
-const GALLERY_KEY   = 'jarvis_gallery_v1';
-const GALLERY_MAX   = 30;   // max images stored
-const GALLERY_QUAL  = 0.82; // JPEG quality for storage (keeps size manageable)
-
-function loadGallery() {
-  try { return JSON.parse(localStorage.getItem(GALLERY_KEY)) || []; } catch { return []; }
-}
-
-function saveGallery(items) {
-  localStorage.setItem(GALLERY_KEY, JSON.stringify(items));
-}
-
-// Compress image to JPEG before storing to keep localStorage usage low
-function compressImage(dataUrl, callback) {
-  const img = new Image();
-  img.onload = () => {
-    const MAX = 600;
-    let w = img.naturalWidth, h = img.naturalHeight;
-    if (w > MAX || h > MAX) {
-      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-      else        { w = Math.round(w * MAX / h); h = MAX; }
-    }
-    const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    c.getContext('2d').drawImage(img, 0, 0, w, h);
-    callback(c.toDataURL('image/jpeg', GALLERY_QUAL));
-  };
-  img.onerror = () => callback(dataUrl); // fallback: store as-is
-  img.src = dataUrl;
-}
-
-function addToGallery(dataUrl, prompt) {
-  compressImage(dataUrl, compressed => {
-    const items = loadGallery();
-    items.unshift({
-      id:        Date.now().toString(36),
-      timestamp: new Date().toISOString(),
-      prompt:    prompt || 'Generated image',
-      dataUrl:   compressed,
-    });
-    items.splice(GALLERY_MAX); // keep only latest N
-    try { saveGallery(items); } catch(e) {
-      // localStorage quota exceeded — drop oldest and retry
-      items.splice(Math.floor(GALLERY_MAX / 2));
-      try { saveGallery(items); } catch { /* silently give up */ }
-    }
-  });
-}
-
-function openGallery() {
-  renderGalleryGrid();
-  $('galleryModal').classList.add('open');
-}
-
-function closeGallery() {
-  $('galleryModal').classList.remove('open');
-}
-
-function renderGalleryGrid() {
-  const items = loadGallery();
-  const grid  = $('galleryGrid');
-  $('galleryCount').textContent = items.length + ' image' + (items.length !== 1 ? 's' : '');
-
-  if (!items.length) {
-    grid.innerHTML = `<div class="gallery-empty">
-      NO IMAGES YET<br><br>
-      <span style="font-size:10px">Generate an image and it will appear here automatically.</span>
-    </div>`;
+async function executeAdminCommand(cmd){
+  cmd=(cmd||"").trim();
+  if(!cmd||cmd==="help"){ appendAdminCommandMenu(); return; }
+  if(cmd==="status"){ const d=await adminAction("status"); if(d.error){appendAdminMessage("✗ "+d.error);return;}
+    appendAdminMessage(`<b>SYSTEM STATUS</b><table class="admin-cmd-table">
+      <tr><td>Provider</td><td>${escH(d.provider)}</td></tr><tr><td>Model</td><td>${escH(d.model)}</td></tr>
+      <tr><td>Providers</td><td>${(d.providers||[]).join(", ")}</td></tr>
+      <tr><td>Personality</td><td>${d.personality?("SET — "+escH(d.personality.slice(0,60))+"…"):"none (default)"}</td></tr></table>`); return; }
+  if(cmd==="personality"){ const d=await adminAction("personality_get");
+    appendAdminMessage(d.personality?`<b>PERSONALITY</b><pre style="white-space:pre-wrap">${escH(d.personality)}</pre>`:"No personality override — using default JARVIS."); return; }
+  if(cmd==="personality set session"||cmd==="personality set global"){
+    adminPersonalityPending = cmd.endsWith("session")?"session":"global";
+    appendAdminMessage(`Type the personality instructions in the input and press send. Scope: <b>${adminPersonalityPending.toUpperCase()}</b>.`); $("input").focus(); return; }
+  if(cmd==="personality clear global"){ await adminAction("personality_clear"); appendAdminMessage("✓ Global personality reset to default."); return; }
+  if(cmd==="model"){ const d=await adminAction("status"); appendAdminMessage(`<b>MODEL</b><br>Provider: <b>${escH(d.provider)}</b><br>Model: <b>${escH(d.model)}</b><br><br>Change: <code>//admin model set &lt;provider&gt; &lt;model&gt;</code>`); return; }
+  if(cmd.startsWith("model set ")){ const p=cmd.slice(10).trim().split(/\s+/); const provider=p[0], model=p.slice(1).join(" ");
+    if(!provider){ appendAdminMessage("Usage: //admin model set &lt;provider&gt; &lt;model&gt;"); return; }
+    const d=await adminAction("config_set",{provider,...(model?{model}:{})}); if(d.error){appendAdminMessage("✗ "+d.error);return;}
+    appendAdminMessage(`✓ Switched to <b>${escH(d.provider)} / ${escH(d.model)}</b>`); updateFooter(); return; }
+  if(cmd.startsWith("cp ")){ const np=cmd.slice(3).trim(); if(!np){appendAdminMessage("Usage: //admin cp &lt;newpassword&gt;");return;}
+    const d=await adminAction("password_change",{password:np}); if(d.error){appendAdminMessage("✗ "+d.error);return;} adminPassword=np; appendAdminMessage("✓ Admin password updated."); return; }
+  if(cmd.startsWith("chat ")){ streamAdminChat(cmd.slice(5).trim()); return; }
+  if(cmd==="wf studio"){ openWorkflowStudio(); return; }
+  if(cmd==="wf"||cmd==="workflows"){ const d=await adminAction("workflow_list"); if(d.error){appendAdminMessage("✗ "+d.error);return;}
+    let h=`<b>WORKFLOWS</b><table class="admin-cmd-table">`; (d.workflows||[]).forEach(w=>h+=`<tr><td>${escH(w.id)}</td><td>v${w.version} · ${w.nodes} node(s) — ${escH(w.description||"")}</td></tr>`);
+    appendAdminMessage(h+`</table><br><span style="opacity:.6">Edit: <code>//admin wf edit &lt;id&gt; &lt;change&gt;</code> · Studio: <code>//admin wf studio</code></span>`); return; }
+  if(cmd.startsWith("wf get ")){ const id=cmd.slice(7).trim(); const d=await adminAction("workflow_get",{id});
+    appendAdminMessage(d.workflow?`<b>WORKFLOW ${escH(id)}</b><pre style="white-space:pre-wrap">${escH(JSON.stringify(d.workflow,null,2))}</pre>`:"✗ Not found"); return; }
+  if(cmd.startsWith("wf edit ")){ const rest=cmd.slice(8).trim(); const sp=rest.indexOf(" ");
+    if(sp<0){appendAdminMessage("Usage: //admin wf edit &lt;id&gt; &lt;change&gt;");return;}
+    const id=rest.slice(0,sp), request=rest.slice(sp+1); appendAdminMessage("⬡ Editing…");
+    const d=await adminAction("workflow_edit",{id,request});
+    appendAdminMessage(d.ok?`✓ <b>${escH(id)}</b> → v${d.version} (${d.nodes} node(s)). Previous version backed up.`:"✗ "+escH(d.error||"failed")); return; }
+  if(cmd.startsWith("wf versions ")){ const id=cmd.slice(12).trim(); const d=await adminAction("workflow_versions",{id});
+    appendAdminMessage(`<b>VERSIONS — ${escH(id)}</b><br>${(d.versions||[]).map(v=>`<code>${escH(v)}</code>`).join("<br>")||"none"}<br><br><span style="opacity:.6">Rollback: <code>//admin wf rollback ${escH(id)} &lt;file&gt;</code></span>`); return; }
+  if(cmd.startsWith("wf rollback ")){ const p=cmd.slice(12).trim().split(/\s+/); const id=p[0], file=p.slice(1).join(" ");
+    const d=await adminAction("workflow_rollback",{id,version:file}); appendAdminMessage(d.ok?`✓ Rolled back <b>${escH(id)}</b> to v${d.version}.`:"✗ "+escH(d.error||"failed")); return; }
+  if(cmd==="subs"||cmd==="subscribers"){
+    const d=await adminAction("subscribers_list"); if(d.error){appendAdminMessage("✗ "+d.error);return;}
+    const list=(d.subscribers||[]).map(s=>escH(s.email)).join("<br>")||"<i>none yet</i>";
+    appendAdminMessage(`<b>NEWSLETTER SUBSCRIBERS — ${d.count}</b><br><br>${list}<br><br><a href="/api/subscribers/export?token=${encodeURIComponent(adminPassword)}" target="_blank" style="color:var(--neon)">⬇ Download Excel sheet</a>`);
     return;
   }
-
-  grid.innerHTML = items.map(item => {
-    const date = new Date(item.timestamp).toLocaleDateString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-    return `
-      <div class="g-card">
-        <img src="${item.dataUrl}" alt="${escH(item.prompt)}" loading="lazy">
-        <div class="g-card-overlay">
-          <div class="g-card-prompt">${escH(item.prompt)}</div>
-          <div class="g-card-date">${date}</div>
-          <div class="g-card-actions">
-            <select class="g-dl-fmt">
-              <option value="image/png">PNG</option>
-              <option value="image/jpeg">JPEG</option>
-              <option value="image/webp">WebP</option>
-            </select>
-            <button class="g-dl-btn" onclick="galleryDownload(this,'${escH(item.id)}')">↓ Save</button>
-          </div>
-        </div>
-        <button class="g-del-btn" onclick="galleryDelete('${escH(item.id)}')" title="Remove from gallery">✕</button>
-      </div>`;
-  }).join('');
+  appendAdminMessage(`Unknown command: <code>//admin ${escH(cmd)}</code><br>Type <code>//admin help</code> for the menu.`);
 }
-
-function galleryDownload(btn, id) {
-  const items = loadGallery();
-  const item  = items.find(i => i.id === id);
-  if (!item) return;
-  const fmt = btn.closest('.g-card').querySelector('.g-dl-fmt').value;
-  const ext = fmt.split('/')[1];
-
-  // Re-draw at original quality via canvas so format conversion works
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas');
-    c.width = img.naturalWidth; c.height = img.naturalHeight;
-    c.getContext('2d').drawImage(img, 0, 0);
-    c.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'jarvis-' + id + '.' + ext;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
-      showToast('Saved as ' + ext.toUpperCase());
-    }, fmt, 0.95);
-  };
-  img.src = item.dataUrl;
-}
-
-function galleryDelete(id) {
-  const items = loadGallery().filter(i => i.id !== id);
-  saveGallery(items);
-  renderGalleryGrid();
-  showToast('Image removed from gallery');
-}
-
-// ═══════════════════════════════════════════════════════
-// COPY & DOWNLOAD ACTIONS
-// ═══════════════════════════════════════════════════════
-function copyAnswer(msgEl) {
-  const text = msgEl?._rawText || "";
-  if (!text.trim()) return;
-  navigator.clipboard.writeText(text.trim()).then(() => {
-    const btn = msgEl.querySelector('[data-role="copy-btn"]');
-    if (btn) {
-      btn.classList.add("copied");
-      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,8 6,12 14,4"/></svg> Copied`;
-      setTimeout(() => {
-        btn.classList.remove("copied");
-        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg> Copy`;
-      }, 2000);
+async function streamAdminChat(message){
+  const el=appendAdminMessage('<span class="dots"><span>●</span><span>●</span><span>●</span></span> Thinking…',true);
+  adminChatHistory.push({role:"user",content:message}); let raw="";
+  try{
+    const r=await fetch("/api/admin/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:adminPassword,message,history:adminChatHistory.slice(-10)})});
+    const reader=r.body.getReader(), dec=new TextDecoder(); let buf="";
+    while(true){ const {done,value}=await reader.read(); if(done) break; buf+=dec.decode(value,{stream:true}); let nl;
+      while((nl=buf.indexOf("\n"))!==-1){ const line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(!line) continue;
+        try{ const ev=JSON.parse(line); if(ev.type==="token") raw+=ev.text; }catch{} }
+      el.querySelector(".admin-body").innerHTML=md(raw.replace(/\[\[ADMIN_ACTION:[^\]]+\]\]/g,"").trim());
     }
-    showToast("Response copied to clipboard");
-  }).catch(() => showToast("Copy failed — try selecting text manually"));
+    for(const m of [...raw.matchAll(/\[\[ADMIN_ACTION:({[^}]+(?:\{[^}]*\}[^}]*)*})\]\]/g)]){ try{ await executeAdminAction(JSON.parse(m[1])); }catch{} }
+    adminChatHistory.push({role:"assistant",content:raw.replace(/\[\[ADMIN_ACTION:[^\]]+\]\]/g,"").trim()});
+  }catch(e){ el.querySelector(".admin-body").textContent="✗ "+e; }
+}
+async function executeAdminAction(act){
+  if(!act||!act.type) return;
+  if(act.type==="config_set"){ const d=await adminAction("config_set",act); if(d.provider){ updateFooter(); appendAdminMessage(`✓ Switched to <b>${escH(d.provider)} / ${escH(d.model)}</b>`); } }
+  else if(act.type==="personality_set"){ await adminAction("personality_set",{text:act.text}); appendAdminMessage("✓ Personality saved."); }
+  else if(act.type==="personality_clear"){ await adminAction("personality_clear"); appendAdminMessage("✓ Personality reset."); }
+  else if(act.type==="password_change"){ const d=await adminAction("password_change",{password:act.password}); if(!d.error){ adminPassword=act.password; appendAdminMessage("✓ Password changed."); } }
+  else if(act.type==="workflow_edit"){ const d=await adminAction("workflow_edit",{id:act.id||"default",request:act.request||""}); appendAdminMessage(d.ok?`✓ Workflow <b>${escH(d.id)}</b> → v${d.version} (${d.nodes} node(s)).`:"✗ "+escH(d.error||"failed")); }
+  else if(act.type==="workflow_list"){ const d=await adminAction("workflow_list"); let h=`<b>WORKFLOWS</b><table class="admin-cmd-table">`; (d.workflows||[]).forEach(w=>h+=`<tr><td>${escH(w.id)}</td><td>v${w.version} · ${w.nodes} node(s)</td></tr>`); appendAdminMessage(h+`</table>`); }
+}
+function showAdminWelcome(){
+  const e=document.createElement("div"); e.className="welcome"; e.id="admin-welcome";
+  e.innerHTML=`<img src="/static/jarvis-logo.png" alt="J"/><h1 style="color:#f87171">GOOD TO HAVE YOU BACK, SIR.</h1><p>Administrator mode active.</p>`;
+  $("thread").insertAdjacentElement("afterbegin",e); appendAdminCommandMenu();
+}
+function appendAdminCommandMenu(){
+  const wrap=document.createElement("div"); wrap.className="msg admin-msg";
+  wrap.innerHTML=`<div class="admin-msg-header">⬡ ADMINISTRATOR MODE — select a command</div>
+    <div class="admin-cmd-grid">${ADMIN_COMMAND_DEFS.map((c,i)=>`<button class="admin-cmd-btn" onclick="adminMenuClick(${i})" title="${escA(c.desc)}"><span class="admin-cmd-btn-label">${escH(c.label)}</span><span class="admin-cmd-btn-desc">${escH(c.desc)}</span></button>`).join("")}</div>`;
+  $("thread").appendChild(wrap); scrollDown();
+}
+function adminMenuClick(i){ const c=ADMIN_COMMAND_DEFS[i];
+  if(c.fill){ inputEl.value=c.fill; inputEl.focus(); inputEl.setSelectionRange(inputEl.value.length,inputEl.value.length); }
+  else executeAdminCommand(c.cmd); }
+function appendAdminMessage(html,ret){
+  const wrap=document.createElement("div"); wrap.className="msg admin-msg";
+  wrap.innerHTML=`<div class="admin-msg-header">⬡ ADMINISTRATOR MODE</div><div class="admin-body">${html}</div>`;
+  $("thread").appendChild(wrap); scrollDown(); if(ret) return wrap;
 }
 
-function downloadImage(btn) {
-  const wrap = btn.closest('.img-wrap');
-  const img  = wrap.querySelector('img');
-  const fmt  = wrap.querySelector('.fmt-select').value;  // e.g. "image/png"
-  const ext  = fmt.split('/')[1];                        // "png", "jpeg", "webp"
-  const name = 'jarvis-' + Date.now() + '.' + ext;
-
-  // Draw to canvas so we can export in any format regardless of source format
-  const canvas = document.createElement('canvas');
-  canvas.width  = img.naturalWidth  || img.width  || 1024;
-  canvas.height = img.naturalHeight || img.height || 1024;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  canvas.toBlob(blob => {
-    if (!blob) { showToast("Could not export image — try PNG"); return; }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = name;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast(`Image saved as ${ext.toUpperCase()}`);
-  }, fmt, 0.93);
+/* ===================== WORKFLOW STUDIO ===================== */
+let wfStudio={ id:null, wf:null, agents:[] };
+async function openWorkflowStudio(){
+  if(!adminAuthed){ adminPendingCmd="wf studio"; showAdminModal(); return; }
+  try{ const ag=await (await fetch("/api/agents")).json(); wfStudio.agents=(ag.agents||[]).map(a=>a.name); }
+  catch{ wfStudio.agents=["chat","coding","writing","solver","research","image","image_edit","canva"]; }
+  const d=await adminAction("workflow_list"); $("wfStudioModal").classList.add("show");
+  wfRenderList(d.workflows||[]); const list=d.workflows||[];
+  if(list.length) wfLoad((wfStudio.id&&list.some(w=>w.id===wfStudio.id))?wfStudio.id:list[0].id); else wfRenderAll();
 }
+function closeWorkflowStudio(){ $("wfStudioModal").classList.remove("show"); }
+function wfRenderList(list){ $("wfList").innerHTML=list.map(w=>`<button class="wf-list-item ${w.id===wfStudio.id?'active':''}" onclick="wfLoad('${escA(w.id)}')"><b>${escH(w.id)}</b><span>v${w.version} · ${w.nodes} node(s)</span></button>`).join("")+`<button class="wf-list-item wf-new" onclick="wfNewWorkflow()">+ New workflow</button>`; }
+async function wfLoad(id){ const d=await adminAction("workflow_get",{id}); if(!d.workflow){ wfToast("Could not load "+id,true); return; }
+  wfStudio.id=id; wfStudio.wf=d.workflow; wfRenderAll(); const l=await adminAction("workflow_list"); wfRenderList(l.workflows||[]); }
+function wfTopo(nodes){ const done=new Set(),order=[]; for(let i=0;i<nodes.length+1;i++){ let p=false; for(const n of nodes){ if(done.has(n.id))continue; if((n.depends_on||[]).every(d=>done.has(d))){ order.push(n); done.add(n.id); p=true; } } if(!p)break; } for(const n of nodes) if(!done.has(n.id)) order.push(n); return order; }
+function wfRenderAll(){ wfRenderMeta(); wfRenderDiagram(); }
+function wfRenderMeta(){ const m=$("wfMeta"); if(!wfStudio.wf){ m.innerHTML=""; return; }
+  m.innerHTML=`<div class="wf-meta-row">ID <b>${escH(wfStudio.wf.id)}</b> · v${wfStudio.wf.version||1} · run with <code>//wf ${escH(wfStudio.wf.id)} &lt;prompt&gt;</code></div><input id="wfDesc" class="wf-input" placeholder="Description" value="${escA(wfStudio.wf.description||'')}" oninput="wfStudio.wf.description=this.value"/>`; }
+function wfNode(id){ return (wfStudio.wf.nodes||[]).find(n=>n.id===id); }
+function wfRenderDiagram(){ const wrap=$("wfDiagram"); if(!wfStudio.wf){ wrap.innerHTML='<div class="wf-empty">Select or create a workflow.</div>'; return; }
+  const nodes=wfTopo(wfStudio.wf.nodes||[]);
+  wrap.innerHTML=nodes.map((n,i)=>{ const deps=(n.depends_on||[]);
+    return `${i>0?'<div class="wf-arrow">&#8595;</div>':''}<div class="wf-node">
+      <div class="wf-node-head"><input class="wf-node-id" value="${escA(n.id)}" onchange="wfRenameNode('${escA(n.id)}',this.value)"/>
+        <select class="wf-node-agent" onchange="wfSetField('${escA(n.id)}','agent',this.value)">${wfStudio.agents.map(a=>`<option ${a===n.agent?'selected':''}>${escH(a)}</option>`).join("")}</select>
+        <button class="wf-del" onclick="wfDeleteNode('${escA(n.id)}')">&#10005;</button></div>
+      <textarea class="wf-node-instr" placeholder="Step instruction…" oninput="wfSetField('${escA(n.id)}','instruction',this.value)">${escH(n.instruction||'')}</textarea>
+      <div class="wf-node-foot"><input class="wf-node-model" placeholder="model override (optional)" value="${escA(n.model||'')}" onchange="wfSetField('${escA(n.id)}','model',this.value)"/>
+        <div class="wf-deps">depends on:&nbsp;${(wfStudio.wf.nodes||[]).filter(x=>x.id!==n.id).map(x=>`<label class="wf-dep-toggle"><input type="checkbox" ${deps.includes(x.id)?'checked':''} onchange="wfToggleDep('${escA(n.id)}','${escA(x.id)}',this.checked)"/>${escH(x.id)}</label>`).join("")||'<i>nothing (entry)</i>'}</div></div></div>`;
+  }).join("")+`<div class="wf-arrow">&#8595;</div><button class="wf-add" onclick="wfAddNode()">+ Add step</button>`; }
+function wfSetField(id,f,v){ const n=wfNode(id); if(!n)return; if(f==="model"&&!v) delete n.model; else n[f]=v; }
+function wfToggleDep(id,dep,on){ const n=wfNode(id); if(!n)return; n.depends_on=n.depends_on||[]; if(on&&!n.depends_on.includes(dep))n.depends_on.push(dep); if(!on)n.depends_on=n.depends_on.filter(d=>d!==dep); wfRenderDiagram(); }
+function wfRenameNode(o,nw){ nw=(nw||"").trim(); if(!nw||nw===o){ wfRenderDiagram(); return; } if(wfNode(nw)){ wfToast("That id already exists",true); wfRenderDiagram(); return; } const n=wfNode(o); if(!n)return; n.id=nw; (wfStudio.wf.nodes||[]).forEach(x=>x.depends_on=(x.depends_on||[]).map(d=>d===o?nw:d)); wfRenderDiagram(); }
+function wfAddNode(){ const nodes=wfStudio.wf.nodes=wfStudio.wf.nodes||[]; const last=nodes.length?nodes[nodes.length-1].id:null; let i=nodes.length+1,id="step_"+i; while(wfNode(id)){ i++; id="step_"+i; } nodes.push({id,agent:wfStudio.agents[0]||"chat",instruction:"",depends_on:last?[last]:[]}); wfRenderDiagram(); }
+function wfDeleteNode(id){ if((wfStudio.wf.nodes||[]).length<=1){ wfToast("A workflow needs at least one step",true); return; } wfStudio.wf.nodes=(wfStudio.wf.nodes||[]).filter(n=>n.id!==id); (wfStudio.wf.nodes||[]).forEach(x=>x.depends_on=(x.depends_on||[]).filter(d=>d!==id)); wfRenderDiagram(); }
+async function wfNewWorkflow(){ const id=(prompt("New workflow id (letters, numbers, _ or -):")||"").trim(); if(!id)return; if(!/^[\w.\-]+$/.test(id)){ wfToast("Invalid id",true); return; } const d=await adminAction("workflow_create",{id}); if(d.ok===false){ wfToast(d.error||"create failed",true); return; } wfStudio.id=id; await wfLoad(id); }
+async function wfSave(){ if(!wfStudio.wf)return; const d=await adminAction("workflow_save",{id:wfStudio.id,workflow:wfStudio.wf});
+  if(d.ok){ wfStudio.wf.version=d.version; wfToast(`Saved → v${d.version} (${d.nodes} node(s)). Previous version backed up.`); wfRenderMeta(); const l=await adminAction("workflow_list"); wfRenderList(l.workflows||[]); }
+  else wfToast(d.error||"save failed — check agents & dependencies",true); }
+async function wfAiEdit(){ const inp=$("wfAiInput"), req=inp.value.trim(); if(!req||!wfStudio.id)return; wfToast("Asking JARVIS to edit…"); const d=await adminAction("workflow_edit",{id:wfStudio.id,request:req}); if(d.ok){ inp.value=""; await wfLoad(wfStudio.id); wfToast(`Edited → v${d.version}`); } else wfToast(d.error||"edit failed",true); }
+function wfToast(msg,err){ const t=$("wfToast"); t.textContent=msg; t.className="wf-toast"+(err?" err":"")+" show"; setTimeout(()=>{ t.className="wf-toast"+(err?" err":""); },2800); }
 
-// ═══════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════
-function escH(s)  { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function escA(s)  { return escH(s).replace(/"/g,"&quot;"); }
-function cap(s)   { const t=(s||"").replace(/_/g," "); return t.charAt(0).toUpperCase()+t.slice(1); }
-function shorten(s,n){ return s&&s.length>n?s.slice(0,n)+"…":(s||""); }
-
-let toastTimer;
-function showToast(msg) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
-}
-
-// ═══════════════════════════════════════════════════════
-// GHOST PROXIMITY ANIMATION
-// ═══════════════════════════════════════════════════════
-(function() {
-  const btn = $("ghostBtn");
-  const svg = btn.querySelector(".ghost-svg");
-
-  // Current animated values (lerped each frame)
-  let curY = 0, curRot = 0, curScale = 1, curGlow = 0;
-  // Target intensity 0–1 based on mouse distance
-  let intensity = 0, targetIntensity = 0;
-
-  const PROXIMITY_START = 220; // px — animation begins waking up here
-  const PROXIMITY_FULL  = 40;  // px — fully active this close
-
-  document.addEventListener("mousemove", e => {
-    const r  = btn.getBoundingClientRect();
-    const cx = r.left + r.width  / 2;
-    const cy = r.top  + r.height / 2;
-    const d  = Math.hypot(e.clientX - cx, e.clientY - cy);
-    targetIntensity = d >= PROXIMITY_START ? 0
-      : d <= PROXIMITY_FULL ? 1
-      : (PROXIMITY_START - d) / (PROXIMITY_START - PROXIMITY_FULL);
-  });
-
-  // When mouse leaves the window entirely, wind down
-  document.addEventListener("mouseleave", () => { targetIntensity = 0; });
-
-  function lerp(a, b, t) { return a + (b - a) * t; }
-
-  let t0 = performance.now();
-
-  function tick(now) {
-    requestAnimationFrame(tick);
-    const t = now / 1000;
-
-    // Ease intensity toward target (slow ramp-up, quick release)
-    const easeSpeed = intensity < targetIntensity ? 0.035 : 0.07;
-    intensity = lerp(intensity, targetIntensity, easeSpeed);
-
-    // Idle oscillation (always present at low amplitude)
-    const idleY   = Math.sin(t * 0.9)  * 4;
-    const idleRot = Math.sin(t * 0.65) * 1.2;
-
-    // Excited oscillation (layered in as intensity grows)
-    const excY   = Math.sin(t * 3.2 + 0.5) * 8;
-    const excRot = Math.sin(t * 2.8)        * 5;
-
-    const targetY     = lerp(idleY,   excY,   intensity);
-    const targetRot   = lerp(idleRot, excRot, intensity);
-    const targetScale = lerp(1,       1.12,   intensity);
-    const targetGlow  = intensity;
-
-    // Smooth follow (separate lerp so motion has inertia)
-    const f = 0.12;
-    curY     = lerp(curY,     targetY,     f);
-    curRot   = lerp(curRot,   targetRot,   f);
-    curScale = lerp(curScale, targetScale, f);
-    curGlow  = lerp(curGlow,  targetGlow,  f * 0.6);
-
-    svg.style.transform = `translateY(${curY.toFixed(2)}px) rotate(${curRot.toFixed(2)}deg) scale(${curScale.toFixed(4)})`;
-
-    const isIncog = btn.classList.contains("incognito");
-    const r1 = isIncog ? "103,232,249" : "192,132,252";
-    const r2 = isIncog ? "103,232,249" : "232,121,249";
-    const a1 = (0.28 + curGlow * 0.6).toFixed(2);
-    const a2 = (curGlow * 0.45).toFixed(2);
-    const px1 = (4 + curGlow * 12).toFixed(1);
-    const px2 = (curGlow * 22).toFixed(1);
-    svg.style.filter = `drop-shadow(0 0 ${px1}px rgba(${r1},${a1})) drop-shadow(0 0 ${px2}px rgba(${r2},${a2}))`;
-  }
-
-  requestAnimationFrame(tick);
-})();
-
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
-onProviderChange(); // hide/show api key row initially
 boot();
+if(window.speechSynthesis) speechSynthesis.onvoiceschanged=()=>{};
 </script>
+
+<!-- Admin password modal -->
+<div id="adminModal" class="modal">
+  <div style="background:#0d0d0d;border:1px solid var(--admin-deep);border-radius:12px;padding:30px 26px;min-width:320px;font-family:var(--mono)">
+    <div style="color:var(--admin);font-size:11px;letter-spacing:.18em;margin-bottom:4px">⬡ JARVIS ADMINISTRATOR ACCESS</div>
+    <div style="color:var(--muted);font-size:10px;margin-bottom:18px">Enter admin password</div>
+    <input id="adminPwInput" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')submitAdminAuth()"
+      style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:6px;padding:10px 12px;color:#fff;font-family:var(--mono);font-size:13px;outline:none"/>
+    <div id="adminPwErr" style="color:var(--admin);font-size:10px;margin-top:6px;min-height:14px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="closeAdminModal()" style="flex:1;background:transparent;border:1px solid #333;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:9px;border-radius:6px;cursor:pointer">CANCEL</button>
+      <button onclick="submitAdminAuth()" style="flex:2;background:#7f1d1d;border:1px solid var(--admin-deep);color:#fca5a5;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:9px;border-radius:6px;cursor:pointer">⬡ AUTHENTICATE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workflow Studio modal -->
+<div id="wfStudioModal" class="modal">
+  <div class="wf-studio">
+    <div class="wf-studio-head"><span>⬡ WORKFLOW STUDIO — visual editor</span><button class="wf-x" onclick="closeWorkflowStudio()">✕</button></div>
+    <div class="wf-studio-body">
+      <aside class="wf-side"><div class="wf-side-title">WORKFLOWS</div><div id="wfList"></div></aside>
+      <main class="wf-main"><div id="wfMeta"></div><div id="wfDiagram" class="wf-diagram"></div></main>
+    </div>
+    <div class="wf-studio-foot">
+      <input id="wfAiInput" class="wf-input" placeholder="Ask JARVIS to edit this workflow in plain English…" onkeydown="if(event.key==='Enter')wfAiEdit()"/>
+      <button class="wf-btn ghost" onclick="wfAiEdit()">AI EDIT</button>
+      <button class="wf-btn" onclick="wfSave()">⬡ SAVE</button>
+    </div>
+    <div id="wfToast" class="wf-toast"></div>
+  </div>
+</div>
+
+<style>
+.wf-studio{ width:min(1040px,95vw); height:min(760px,90vh); background:#0c0c0c; border:1px solid var(--admin-deep); border-radius:14px; display:flex; flex-direction:column; overflow:hidden; position:relative; font-family:var(--mono); }
+.wf-studio-head{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid #2a0a0a; color:var(--admin); font-size:11px; letter-spacing:.16em; }
+.wf-x{ background:transparent; border:none; color:#888; font-size:14px; cursor:pointer; }
+.wf-studio-body{ flex:1; display:flex; min-height:0; }
+.wf-side{ width:212px; border-right:1px solid #1c1c1c; padding:12px; overflow:auto; }
+.wf-side-title{ font-size:9px; letter-spacing:.15em; color:var(--muted); margin-bottom:8px; }
+.wf-list-item{ display:block; width:100%; text-align:left; background:#111; border:1px solid #222; border-radius:8px; padding:8px 10px; margin-bottom:6px; color:#ddd; cursor:pointer; font-family:var(--mono); font-size:11px; }
+.wf-list-item span{ display:block; font-size:9px; color:var(--muted); margin-top:2px; }
+.wf-list-item.active{ border-color:var(--admin-deep); background:#1a0606; } .wf-list-item.wf-new{ color:#9ca3af; border-style:dashed; }
+.wf-main{ flex:1; display:flex; flex-direction:column; min-width:0; }
+#wfMeta{ padding:12px 16px; border-bottom:1px solid #1c1c1c; } .wf-meta-row{ font-size:10px; color:var(--muted); margin-bottom:8px; } .wf-meta-row b{ color:var(--neon); } .wf-meta-row code{ background:#1a1a1a; padding:1px 5px; border-radius:3px; }
+.wf-diagram{ flex:1; overflow:auto; padding:18px; display:flex; flex-direction:column; align-items:center; } .wf-empty{ color:var(--muted); margin:auto; font-size:12px; }
+.wf-node{ width:min(540px,100%); background:#101010; border:1px solid #2b2b2b; border-radius:10px; padding:10px 12px; }
+.wf-node-head{ display:flex; gap:8px; align-items:center; }
+.wf-node-id{ flex:0 0 140px; background:#0a0a0a; border:1px solid #333; border-radius:6px; color:#fff; padding:5px 8px; font-family:var(--mono); font-size:11px; }
+.wf-node-agent{ flex:1; background:#0a0a0a; border:1px solid #333; border-radius:6px; color:var(--neon); padding:5px 8px; font-family:var(--mono); font-size:11px; }
+.wf-del{ background:transparent; border:none; color:var(--admin); font-size:12px; cursor:pointer; }
+.wf-node-instr{ width:100%; box-sizing:border-box; margin-top:8px; background:#0a0a0a; border:1px solid #2b2b2b; border-radius:6px; color:#ddd; padding:7px 9px; font-family:var(--mono); font-size:11px; min-height:46px; resize:vertical; }
+.wf-node-foot{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px; }
+.wf-node-model{ background:#0a0a0a; border:1px solid #2b2b2b; border-radius:6px; color:#ddd; padding:5px 8px; font-family:var(--mono); font-size:10px; width:180px; }
+.wf-deps{ font-size:10px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; } .wf-dep-toggle{ display:inline-flex; gap:3px; align-items:center; color:#bbb; cursor:pointer; }
+.wf-arrow{ color:var(--admin-deep); font-size:16px; margin:5px 0; }
+.wf-add{ background:#111; border:1px dashed var(--admin-deep); border-radius:8px; color:#f87171; padding:8px 14px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; cursor:pointer; }
+.wf-studio-foot{ display:flex; gap:8px; padding:12px 16px; border-top:1px solid #2a0a0a; }
+.wf-input{ flex:1; background:#0a0a0a; border:1px solid #333; border-radius:6px; color:#fff; padding:8px 10px; font-family:var(--mono); font-size:11px; outline:none; }
+.wf-btn{ background:#7f1d1d; border:1px solid var(--admin-deep); color:#fca5a5; border-radius:6px; padding:8px 16px; font-size:10px; letter-spacing:.1em; cursor:pointer; font-family:var(--mono); } .wf-btn.ghost{ background:transparent; color:#9ca3af; border-color:#333; }
+.wf-toast{ position:absolute; bottom:64px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0; transition:.25s; background:#06140a; border:1px solid #0f3f1a; color:#86efac; padding:8px 14px; border-radius:8px; font-size:11px; pointer-events:none; max-width:80%; text-align:center; } .wf-toast.err{ background:#1a0606; border-color:#3f0000; color:#fca5a5; } .wf-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+
+<!-- Image gallery modal -->
+<div id="galleryModal" class="modal">
+  <div class="gallery-box">
+    <div class="gallery-head">
+      <span id="galleryTitle">🖼 IMAGE GALLERY</span>
+      <div class="gallery-tabs">
+        <button class="wf-btn ghost activeTab" id="galTabGeneral" onclick="openGallery(false)">General</button>
+        <button class="wf-btn ghost" id="galTabAdmin" onclick="openGallery(true)" style="display:none">Admin</button>
+        <button class="wf-x" onclick="closeGallery()">✕</button>
+      </div>
+    </div>
+    <div id="galleryGrid" class="gallery-grid"></div>
+  </div>
+</div>
+<style>
+.gallery-box{ width:min(1040px,95vw); height:min(740px,90vh); background:#0c0c0c; border:1px solid var(--neon); border-radius:14px; display:flex; flex-direction:column; overflow:hidden; font-family:var(--mono); }
+.gallery-head{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); color:var(--neon); font-size:11px; letter-spacing:.14em; }
+.gallery-tabs{ display:flex; align-items:center; gap:8px; }
+.gallery-tabs .wf-btn{ padding:6px 12px; } .wf-btn.activeTab{ background:#0c1820; border-color:var(--neon); color:var(--neon); }
+.gallery-grid{ flex:1; overflow:auto; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; align-content:start; }
+.gal-item{ position:relative; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#101010; }
+.gal-item img{ width:100%; height:130px; object-fit:cover; display:block; cursor:zoom-in; }
+.gal-del{ position:absolute; top:5px; right:5px; background:rgba(0,0,0,.6); border:none; color:#fca5a5; border-radius:6px; width:22px; height:22px; cursor:pointer; opacity:0; transition:.15s; }
+.gal-item:hover .gal-del{ opacity:1; }
+.gal-cap{ font-size:9px; color:var(--muted); padding:5px 7px; line-height:1.3; max-height:34px; overflow:hidden; }
+.gallery-empty{ grid-column:1/-1; color:var(--muted); text-align:center; padding:40px; font-size:12px; }
+.attach-preview{ display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:6px 10px; background:#0c1820; border:1px solid var(--neon); border-radius:8px; font-family:var(--mono); font-size:11px; color:var(--neon); width:fit-content; }
+.attach-preview button{ background:transparent; border:none; color:#fca5a5; cursor:pointer; font-size:11px; }
+</style>
+
+<!-- Live preview modal -->
+<div id="previewModal" class="modal">
+  <div style="width:min(1040px,96vw);height:min(740px,92vh);background:#0c0c0c;border:1px solid var(--neon);border-radius:14px;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--neon)">
+      <span>▶ LIVE PREVIEW — fully operational · backend calls return placeholder data</span>
+      <button class="wf-x" onclick="closePreview()">✕</button>
+    </div>
+    <iframe id="previewFrame" sandbox="allow-scripts allow-forms allow-modals allow-popups" style="flex:1;border:0;background:#fff;width:100%"></iframe>
+  </div>
+</div>
 </body>
 </html>

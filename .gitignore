@@ -17,3 +17,8 @@ build/
 # Editor
 .vscode/
 .idea/
+
+# Local data (server-side sessions, coding-agent workspace, workflow backups)
+data/
+workspace/
+config/workflows/versions/

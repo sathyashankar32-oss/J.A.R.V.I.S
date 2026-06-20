@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workflow",
+  "type": "object",
+  "required": ["id", "version", "nodes"],
+  "additionalProperties": true,
+  "properties": {
+    "id": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "agent"],
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "agent": {
+            "type": "string",
+            "description": "Must be a registered agent in orchestrator.AGENTS.",
+            "enum": ["chat", "coding", "writing", "solver", "research", "image", "image_edit", "canva"]
+          },
+          "instruction": {
+            "type": "string",
+            "description": "Step-specific instruction appended to the user message for this node."
+          },
+          "model": {
+            "type": "string",
+            "description": "Optional per-step model override (token/cost control). e.g. a small fast model for trivial steps, a large model for the heavy step."
+          },
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "IDs of nodes whose output is fed in as context before this node runs."
+          }
+        }
+      }
+    }
+  }
+}

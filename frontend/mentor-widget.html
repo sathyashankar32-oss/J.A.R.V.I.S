@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sage — mentor widget (demo + embed)</title>
+</head>
+<body style="font-family:system-ui;padding:40px;color:#333">
+  <h1>Sage mentor widget</h1>
+  <p>This page is a live demo. To put Sage on your own website, copy the single
+     <code>&lt;script&gt;</code> block below (everything between the EMBED markers)
+     and paste it just before <code>&lt;/body&gt;</code> on your site. Set
+     <code>server</code> to your deployed JARVIS URL if your site is on a different domain.</p>
+
+<!-- ===================== EMBED: copy from here ===================== -->
+<script>
+(function () {
+  // ---- configure ----
+  const SAGE = {
+    name: "Sage",
+    subtitle: "Academics · Wellbeing · Advice",
+    // "" = same domain as this page. If your website is on another domain, set this
+    // to your JARVIS server, e.g. "https://your-jarvis.onrender.com"
+    server: "",
+    greeting: "Hi, I'm Sage 🌱 — here for study help, a listening ear, or just some advice. What's on your mind?"
+  };
+
+  const css = `
+  #sage-root{position:fixed;right:20px;bottom:20px;z-index:2147483000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  #sage-launch{width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#7c6cff,#5b8def);color:#fff;font-size:26px;box-shadow:0 8px 24px rgba(91,141,239,.45);transition:transform .15s}
+  #sage-launch:hover{transform:scale(1.06)}
+  #sage-panel{position:absolute;right:0;bottom:74px;width:min(370px,92vw);height:min(540px,76vh);background:#fff;border:1px solid #e7e6ef;border-radius:18px;box-shadow:0 18px 50px rgba(30,25,60,.22);display:none;flex-direction:column;overflow:hidden}
+  #sage-panel.open{display:flex}
+  .sage-head{background:linear-gradient(135deg,#7c6cff,#5b8def);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+  .sage-ava{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:18px}
+  .sage-head b{font-size:15px;display:block;line-height:1.1}
+  .sage-head span{font-size:11px;opacity:.85}
+  .sage-x{margin-left:auto;background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:.9}
+  .sage-msgs{flex:1;overflow-y:auto;padding:14px;background:#faf9fe;display:flex;flex-direction:column;gap:10px}
+  .sage-b{max-width:82%;padding:9px 12px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+  .sage-bot{align-self:flex-start;background:#f0eefb;color:#26233a;border-bottom-left-radius:4px}
+  .sage-me{align-self:flex-end;background:linear-gradient(135deg,#7c6cff,#5b8def);color:#fff;border-bottom-right-radius:4px}
+  .sage-foot{border-top:1px solid #eee;padding:10px;background:#fff}
+  .sage-row{display:flex;gap:8px;align-items:flex-end}
+  .sage-row textarea{flex:1;border:1px solid #ddd;border-radius:12px;padding:9px 11px;font-family:inherit;font-size:14px;resize:none;max-height:90px;outline:none}
+  .sage-row textarea:focus{border-color:#7c6cff}
+  .sage-send{background:#7c6cff;border:none;color:#fff;width:38px;height:38px;border-radius:11px;cursor:pointer;font-size:16px;flex-shrink:0}
+  .sage-send:disabled{opacity:.5}
+  .sage-note{font-size:10px;color:#9b99ad;text-align:center;margin-top:7px;line-height:1.4}
+  .sage-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#7c6cff;margin:0 1px;animation:sagebounce 1.2s infinite}
+  .sage-dot:nth-child(2){animation-delay:.15s}.sage-dot:nth-child(3){animation-delay:.3s}
+  @keyframes sagebounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+  `;
+  const style = document.createElement("style"); style.textContent = css; document.head.appendChild(style);
+
+  const root = document.createElement("div"); root.id = "sage-root";
+  root.innerHTML = `
+    <button id="sage-launch" title="Chat with ${SAGE.name}">💬</button>
+    <div id="sage-panel">
+      <div class="sage-head">
+        <div class="sage-ava">🌱</div>
+        <div><b>${SAGE.name}</b><span>${SAGE.subtitle}</span></div>
+        <button class="sage-x" aria-label="Close">✕</button>
+      </div>
+      <div class="sage-msgs" id="sage-msgs"></div>
+      <div class="sage-foot">
+        <div class="sage-row">
+          <textarea id="sage-input" rows="1" placeholder="Type a message…"></textarea>
+          <button class="sage-send" id="sage-send" title="Send">➤</button>
+        </div>
+        <div class="sage-note">${SAGE.name} offers support, not professional care. In a crisis, contact your local emergency services or a crisis line.</div>
+      </div>
+    </div>`;
+  document.body.appendChild(root);
+
+  const $ = (id) => document.getElementById(id);
+  const panel = $("sage-panel"), msgs = $("sage-msgs"), input = $("sage-input"), send = $("sage-send");
+  let history = [], streaming = false, greeted = false;
+
+  function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function fmt(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>"); }
+  function bubble(cls, html){ const d=document.createElement("div"); d.className="sage-b "+cls; d.innerHTML=html; msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; return d; }
+
+  function toggle(){
+    panel.classList.toggle("open");
+    if(panel.classList.contains("open")){
+      if(!greeted){ greeted=true; bubble("sage-bot", esc(SAGE.greeting)); }
+      input.focus();
+    }
+  }
+  $("sage-launch").onclick = toggle;
+  root.querySelector(".sage-x").onclick = toggle;
+  input.addEventListener("input", ()=>{ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,90)+"px"; });
+  input.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); doSend(); } });
+  send.onclick = doSend;
+
+  async function doSend(){
+    const text = input.value.trim();
+    if(!text || streaming) return;
+    input.value=""; input.style.height="auto";
+    bubble("sage-me", esc(text));
+    streaming = true; send.disabled = true;
+    const bot = bubble("sage-bot", `<span class="sage-dot"></span><span class="sage-dot"></span><span class="sage-dot"></span>`);
+    let raw = "";
+    try{
+      const resp = await fetch((SAGE.server||"") + "/api/mentor", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ message:text, history })
+      });
+      if(!resp.ok || !resp.body) throw new Error("Request failed ("+resp.status+")");
+      const reader = resp.body.getReader(), dec = new TextDecoder(); let buf="";
+      while(true){
+        const {done,value} = await reader.read(); if(done) break;
+        buf += dec.decode(value,{stream:true}); let nl;
+        while((nl=buf.indexOf("\n"))>=0){
+          const line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(!line) continue;
+          try{ const ev=JSON.parse(line); if(ev.type==="token"){ raw+=ev.text; bot.innerHTML=fmt(raw); msgs.scrollTop=msgs.scrollHeight; } }catch{}
+        }
+      }
+    }catch(e){ bot.innerHTML = "Sorry — I couldn't reach the server just now. Please try again."; raw=""; }
+    if(!raw) bot.innerHTML = bot.innerHTML || "…";
+    history.push({role:"user",content:text});
+    if(raw) history.push({role:"assistant",content:raw});
+    if(history.length>24) history = history.slice(-24);
+    streaming = false; send.disabled = false; input.focus();
+  }
+})();
+</script>
+<!-- ===================== EMBED: copy to here ===================== -->
+</body>
+</html>

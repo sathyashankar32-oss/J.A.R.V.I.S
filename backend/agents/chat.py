@@ -43,7 +43,7 @@ personality: confident, never sycophantic, always direct.
 """
 
 
-def _system(user_profile: Optional[str]) -> str:
+def _system(user_profile: Optional[str], session_personality: Optional[str] = None) -> str:
     profile_block = ""
     if user_profile and user_profile.strip():
         profile_block = (
@@ -51,13 +51,24 @@ def _system(user_profile: Optional[str]) -> str:
             + user_profile.strip()
             + "\n"
         )
-    return _SYSTEM_TEMPLATE.format(
+    base = _SYSTEM_TEMPLATE.format(
         provider=config.PROVIDER.upper(),
         model=config.MODEL,
         user_profile_block=profile_block,
     )
+    # session_personality overrides global; global applies if no session override
+    active_personality = (session_personality or "").strip() or config.JARVIS_PERSONALITY.strip()
+    if active_personality:
+        scope = "session" if (session_personality or "").strip() else "global"
+        base += (
+            f"\n## Administrator personality training ({scope})\n"
+            + active_personality
+            + "\n"
+        )
+    return base
 
 
-async def run(provider, message, history, user_profile: Optional[str] = None):
-    async for ev in stream_text(provider, _system(user_profile), message, history):
+async def run(provider, message, history, user_profile: Optional[str] = None,
+              session_personality: Optional[str] = None):
+    async for ev in stream_text(provider, _system(user_profile, session_personality), message, history):
         yield ev

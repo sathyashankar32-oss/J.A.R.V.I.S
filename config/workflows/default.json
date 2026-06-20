@@ -1,0 +1,29 @@
+{
+  "id": "default",
+  "version": 1,
+  "description": "Research -> draft -> review. The draft step does the heavy lifting; research and review can run on a smaller/cheaper model via the optional per-node 'model' field to keep token cost down.",
+  "nodes": [
+    {
+      "id": "research",
+      "agent": "research",
+      "instruction": "Gather the key facts, constraints, and sources needed to satisfy the request. Output concise bullet facts only.",
+      "depends_on": []
+    },
+    {
+      "id": "draft",
+      "agent": "writing",
+      "instruction": "Produce the main deliverable using the research. For long-form work, write section by section so length is not a constraint.",
+      "depends_on": [
+        "research"
+      ]
+    },
+    {
+      "id": "review",
+      "agent": "writing",
+      "instruction": "Tighten the draft, fact-check it against the research, and finalize. Return only the final deliverable.",
+      "depends_on": [
+        "draft"
+      ]
+    }
+  ]
+}

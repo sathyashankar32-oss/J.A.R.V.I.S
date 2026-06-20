@@ -15,7 +15,7 @@ import re
 import inspect
 
 from . import config
-from .agents import chat, coding, image, image_edit, research, solver, writing
+from .agents import canva, chat, coding, image, image_edit, research, solver, writing
 
 # ---- Agent registry: name -> {description, run} --------------------------- #
 AGENTS = {
@@ -26,6 +26,7 @@ AGENTS = {
     "research":   {"description": research.DESCRIPTION,   "run": research.run},
     "image":      {"description": image.DESCRIPTION,      "run": image.run},
     "image_edit": {"description": image_edit.DESCRIPTION, "run": image_edit.run},
+    "canva":      {"description": canva.DESCRIPTION,      "run": canva.run},
 }
 DEFAULT_AGENT = "chat"
 
@@ -61,6 +62,11 @@ _KEYWORDS = {
         "image", "picture", "draw", "photo", "illustration", "logo", "render",
         "generate an image", "create an image", "make an image",
         "art", "wallpaper", "poster", "icon", "visualise", "visualize",
+    ],
+    "canva": [
+        "canva", "in canva", "design in canva", "canva design",
+        "banner", "flyer", "brochure", "brand template",
+        "make a design", "create a design",
     ],
     "solver": [
         "solve", "calculate", "compute", "math", "prove", "equation", "logic",
@@ -125,13 +131,48 @@ async def multi_route(provider, message, history) -> list:
     return [_heuristic(message)]
 
 
+# ---- Synthesis ------------------------------------------------------------- #
+_SYNTHESIS_SYSTEM = """You are a synthesis engine for a multi-agent AI system.
+Multiple specialised agents have each analysed the user's request from their own angle.
+Your job is to merge their outputs into ONE seamless, authoritative response.
+
+Rules:
+- Write as a single unified expert — never mention agents, pipelines, or this process
+- Eliminate all redundancy; keep every unique insight
+- Maintain a coherent structure and tone throughout
+- If the outputs include code, include it cleanly in the final answer
+- If outputs conflict, use your judgement to pick the most accurate information
+- Deliver only the final answer — no preamble like "Here is the synthesised response" """
+
+
+async def _collect_agent(provider, agent_name, message, history,
+                          user_profile=None, image_data=None):
+    """Run one agent silently and return its full text output."""
+    agent_obj = AGENTS.get(agent_name, AGENTS[DEFAULT_AGENT])
+    run_fn    = agent_obj["run"]
+    sig       = inspect.signature(run_fn).parameters
+    kwargs    = {}
+    if "user_profile" in sig: kwargs["user_profile"] = user_profile
+    if "image_data"   in sig: kwargs["image_data"]   = image_data
+
+    chunks = []
+    try:
+        async for ev in run_fn(provider, message, history, **kwargs):
+            if ev.get("type") == "token":
+                chunks.append(ev.get("text", ""))
+    except Exception as e:
+        chunks.append(f"[{agent_name} error: {e}]")
+    return "".join(chunks)
+
+
 # ---- Dispatch ------------------------------------------------------------- #
 async def handle(message, history, agent_override=None, agents_override=None,
-                 memory_context=None, user_profile=None, image_data=None):
+                 memory_context=None, user_profile=None, image_data=None,
+                 session_personality=None):
     """Yield the full stream of events for one user message.
 
-    agents_override: list of agent names — runs them as a sequential pipeline.
-    agent_override:  single agent name — pins to one agent (legacy/single override).
+    Single agent  → streams directly.
+    Multiple agents → each runs silently, outputs are synthesised into one response.
     """
     from .providers import get_provider
     provider = get_provider()
@@ -146,7 +187,6 @@ async def handle(message, history, agent_override=None, agents_override=None,
 
     # ── Determine the pipeline (ordered list of agent names) ──────────────── #
     if image_data:
-        # Image attached → always image editor, ignores all overrides
         agent_names = ["image_edit"]
     elif agents_override and isinstance(agents_override, list):
         agent_names = [a for a in agents_override if a in AGENTS]
@@ -160,54 +200,56 @@ async def handle(message, history, agent_override=None, agents_override=None,
     # ── Announce routing ──────────────────────────────────────────────────── #
     yield {"type": "route", "agent": agent_names[0], "agents": agent_names}
 
-    # ── Run the pipeline ──────────────────────────────────────────────────── #
-    context_parts = []   # accumulated text from each prior agent
-
-    for idx, agent_name in enumerate(agent_names):
-
-        # Section header when running more than one agent
-        if len(agent_names) > 1:
-            yield {
-                "type":  "agent_section",
-                "agent": agent_name,
-                "index": idx,
-                "total": len(agent_names),
-            }
-
-        # Build the effective message for this agent.
-        # Agents after the first receive prior agents' output as context.
-        if context_parts and idx > 0:
-            prior_context = "\n\n".join(context_parts)
-            effective_message = (
-                f"{message}\n\n"
-                f"[Pipeline context — output from the "
-                f"{', '.join(agent_names[:idx])} agent(s) that ran before you. "
-                f"Use this as input or reference for your task.]\n\n"
-                f"{prior_context}"
-            )
-        else:
-            effective_message = message
-
+    # ── Single agent: stream directly ────────────────────────────────────── #
+    if len(agent_names) == 1:
+        agent_obj = AGENTS.get(agent_names[0], AGENTS[DEFAULT_AGENT])
+        run_fn    = agent_obj["run"]
+        sig       = inspect.signature(run_fn).parameters
+        kwargs    = {}
+        if "user_profile"        in sig: kwargs["user_profile"]        = user_profile
+        if "image_data"          in sig: kwargs["image_data"]          = image_data
+        if "session_personality" in sig: kwargs["session_personality"] = session_personality
         try:
-            agent_obj = AGENTS.get(agent_name, AGENTS[DEFAULT_AGENT])
-            run_fn    = agent_obj["run"]
-            sig       = inspect.signature(run_fn).parameters
-            kwargs    = {}
-            if "user_profile" in sig: kwargs["user_profile"] = user_profile
-            if "image_data"   in sig: kwargs["image_data"]   = image_data
-
-            collected = []
-            async for ev in run_fn(provider, effective_message, effective_history, **kwargs):
+            async for ev in run_fn(provider, message, effective_history, **kwargs):
                 yield ev
-                if ev.get("type") == "token":
-                    collected.append(ev.get("text", ""))
-
-            if collected:
-                context_parts.append(
-                    f"[{agent_name.upper()} AGENT]\n" + "".join(collected)
-                )
-
         except Exception as e:
-            yield {"type": "token", "text": f"\n\n⚠️ The {agent_name} agent hit an error: {e}"}
+            yield {"type": "token", "text": f"⚠️ Error: {e}"}
+        yield {"type": "done"}
+        return
+
+    # ── Multi-agent: collect silently, then synthesise ────────────────────── #
+    yield {"type": "synthesizing", "agents": agent_names}
+
+    # Run all agents concurrently and collect their outputs
+    agent_outputs = await asyncio.gather(*[
+        _collect_agent(
+            provider, name, message, effective_history,
+            user_profile=user_profile, image_data=image_data,
+        )
+        for name in agent_names
+    ])
+
+    # Build synthesis prompt
+    sections = "\n\n---\n\n".join(
+        f"[{name.upper()} MODULE]\n{output}"
+        for name, output in zip(agent_names, agent_outputs)
+        if output.strip()
+    )
+    synthesis_message = (
+        f"User's request: {message}\n\n"
+        f"Agent outputs to synthesise:\n\n{sections}"
+    )
+
+    # Stream the synthesised response
+    try:
+        async for chunk in provider.stream(
+            [{"role": "user", "content": synthesis_message}],
+            system=_SYNTHESIS_SYSTEM,
+            temperature=0.4,
+            max_tokens=4096,
+        ):
+            yield {"type": "token", "text": chunk}
+    except Exception as e:
+        yield {"type": "token", "text": f"⚠️ Synthesis error: {e}"}
 
     yield {"type": "done"}

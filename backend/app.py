@@ -17,7 +17,10 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import config, orchestrator
+from . import config, orchestrator, workflows
+from . import sessions as sess
+from . import gallery
+from . import subscribers as subs
 
 app = FastAPI(title="J.A.R.V.I.S")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -38,9 +41,11 @@ class ChatRequest(BaseModel):
     history: List[Message] = []
     agent: Optional[str] = None           # pin a single agent (skips routing)
     agents: Optional[List[str]] = None    # run multiple agents as a pipeline
-    memory_context: Optional[str] = None  # injected cross-session context
-    user_profile: Optional[str] = None    # personality profile built from past prompts
-    image_data: Optional[str] = None      # base64 data-URL of an attached image
+    memory_context: Optional[str] = None       # injected cross-session context
+    user_profile: Optional[str] = None         # personality profile built from past prompts
+    image_data: Optional[str] = None           # base64 data-URL of an attached image
+    session_personality: Optional[str] = None  # admin session-only personality override
+    workflow: Optional[str] = None              # run a specific saved workflow by id
 
 
 class ConfigUpdate(BaseModel):
@@ -94,6 +99,153 @@ async def update_config(req: ConfigUpdate):
 @app.get("/api/agents")
 async def get_agents():
     return {"agents": orchestrator.registry()}
+
+
+@app.get("/api/workflows")
+async def list_workflows_endpoint():
+    """List saved workflows (named, editable agent pipelines)."""
+    return {"workflows": workflows.list_workflows()}
+
+
+@app.get("/api/workflows/{workflow_id}")
+async def get_workflow_endpoint(workflow_id: str):
+    from fastapi import HTTPException
+    wf = workflows.get(workflow_id)
+    if wf is None:
+        raise HTTPException(status_code=404, detail="workflow not found")
+    return wf
+
+
+# ── Sessions (server-side chat history) ───────────────────────────────────── #
+class SessionBody(BaseModel):
+    title: Optional[str] = ""
+    messages: List[dict] = []
+    updated: Optional[int] = None
+    admin: bool = False
+
+
+@app.get("/api/sessions")
+async def api_list_sessions():
+    return {"sessions": sess.list_sessions()}
+
+
+@app.get("/api/sessions/{sid}")
+async def api_get_session(sid: str):
+    s = sess.get(sid)
+    if s is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="session not found")
+    return s
+
+
+@app.put("/api/sessions/{sid}")
+async def api_put_session(sid: str, body: SessionBody):
+    return sess.save(sid, body.model_dump())
+
+
+@app.delete("/api/sessions/{sid}")
+async def api_delete_session(sid: str):
+    return sess.delete(sid)
+
+
+# ── Gallery (generated images) ────────────────────────────────────────────── #
+class GalleryBody(BaseModel):
+    url: str
+    prompt: Optional[str] = ""
+    admin: bool = False
+
+
+@app.post("/api/gallery")
+async def api_gallery_add(body: GalleryBody):
+    return gallery.add(body.url, body.prompt, body.admin)
+
+
+@app.get("/api/gallery")
+async def api_gallery_list():
+    # Open gallery only ever exposes non-admin images.
+    return {"items": gallery.list_items(admin=False)}
+
+
+@app.get("/api/gallery/img/{name}")
+async def api_gallery_img(name: str):
+    p = gallery.img_path(name)
+    if p is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="image not found")
+    return FileResponse(str(p))
+
+
+@app.delete("/api/gallery/{iid}")
+async def api_gallery_delete(iid: str):
+    return gallery.delete(iid)
+
+
+# ── Newsletter subscribers ────────────────────────────────────────────────── #
+class SubscribeBody(BaseModel):
+    email: str
+    source: Optional[str] = ""
+
+
+@app.post("/api/subscribe")
+async def api_subscribe(body: SubscribeBody):
+    """Public: your website's signup form posts here. Captured immediately."""
+    return subs.add(body.email, body.source or "")
+
+
+@app.get("/api/subscribers/export")
+async def api_subscribers_export(token: str = ""):
+    from fastapi import HTTPException
+    if token != config.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="admin token required")
+    res = subs.export()
+    fname = "subscribers.xlsx" if res.get("format") == "xlsx" else "subscribers.csv"
+    return FileResponse(res["path"], filename=fname)
+
+
+# ── Public mentor chatbot (powers the website widget) ─────────────────────── #
+# Change this one line to rename the mentor (keep it in sync with the widget).
+MENTOR_NAME = "Vera"
+MENTOR_SYSTEM = (
+    f"You are {MENTOR_NAME}, a warm, supportive mentor embedded on a student's website. "
+    "You help with three things: academics (explaining concepts, study skills, planning, motivation), "
+    "mental wellbeing (a kind, non-judgmental listener), and general life advice. "
+    "Keep replies friendly, encouraging, and fairly concise — this is a small chat widget.\n\n"
+    "Care and boundaries:\n"
+    "- You are NOT a doctor, therapist, or crisis service, and you gently say so when it matters. You do not "
+    "diagnose or give medical/clinical directives. For ongoing or serious concerns, kindly encourage speaking "
+    "with a counselor, doctor, or a trusted person.\n"
+    "- If someone mentions self-harm, suicide, abuse, or being in danger, respond with genuine empathy and "
+    "without judgment, take it seriously, and encourage them to reach out right now to a trusted person or "
+    "their local crisis line / emergency services. Never provide anything harmful, and don't act as their only "
+    "support.\n"
+    "- Never reinforce harsh self-talk or unhealthy habits; gently nudge toward healthy, realistic next steps.\n"
+    "- Keep everything kind and age-appropriate; students may be young.\n"
+    "- Be practical: offer a small next step or a gentle follow-up question when useful."
+)
+
+
+class MentorBody(BaseModel):
+    message: str
+    history: List[Message] = []
+
+
+@app.post("/api/mentor")
+async def api_mentor(req: MentorBody):
+    """Public, scoped mentor chatbot for the website widget. Streams NDJSON tokens."""
+    from .providers import get_provider
+    provider = get_provider()
+    history = [m.model_dump() for m in req.history][-12:]
+
+    async def gen():
+        try:
+            msgs = history + [{"role": "user", "content": req.message}]
+            async for chunk in provider.stream(msgs, system=MENTOR_SYSTEM, temperature=0.6, max_tokens=800):
+                yield json.dumps({"type": "token", "text": chunk}) + "\n"
+        except Exception as e:
+            yield json.dumps({"type": "token", "text": f"⚠️ {e}"}) + "\n"
+        yield json.dumps({"type": "done"}) + "\n"
+
+    return StreamingResponse(gen(), media_type="application/x-ndjson")
 
 
 @app.get("/api/models")
@@ -297,11 +449,195 @@ async def build_personality(req: PersonalityRequest):
         return {"profile": "", "error": str(e)}
 
 
+# ── Admin endpoints ─────────────────────────────────────────────────────── #
+
+class AdminRequest(BaseModel):
+    password: str
+    action: str
+    data: Optional[dict] = None
+
+
+class AdminChatRequest(BaseModel):
+    password: str
+    message: str
+    history: List[Message] = []
+
+
+@app.post("/api/admin")
+async def admin_action(req: AdminRequest):
+    from fastapi import HTTPException
+    if req.password != config.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    action = req.action
+    data   = req.data or {}
+
+    if action == "auth":
+        return {"ok": True}
+
+    if action == "status":
+        return {
+            **config.summary(),
+            "personality": config.JARVIS_PERSONALITY or "",
+            "admin_password_set": bool(config.ADMIN_PASSWORD),
+        }
+
+    if action == "personality_get":
+        return {"personality": config.JARVIS_PERSONALITY}
+
+    if action == "personality_set":
+        config.JARVIS_PERSONALITY = data.get("text", "").strip()
+        config.persist()
+        return {"ok": True}
+
+    if action == "personality_clear":
+        config.JARVIS_PERSONALITY = ""
+        config.persist()
+        return {"ok": True}
+
+    if action == "config_set":
+        from . import providers as _prov
+        if "provider" in data and data["provider"] in config.PROVIDERS_LIST:
+            config.PROVIDER = data["provider"]
+            if "model" not in data:
+                config.MODEL = config.DEFAULT_MODELS.get(config.PROVIDER, "mock-1")
+        if "model" in data and data["model"]:
+            config.MODEL = data["model"]
+        config.persist()
+        _prov.invalidate_cache()
+        return config.summary()
+
+    if action == "password_change":
+        new_pw = data.get("password", "").strip()
+        if not new_pw:
+            raise HTTPException(status_code=400, detail="Password cannot be empty")
+        config.ADMIN_PASSWORD = new_pw
+        config.persist()
+        return {"ok": True}
+
+    # ── Workflow management (self-editing pipelines) ──────────────────────── #
+    if action == "workflow_list":
+        return {"workflows": workflows.list_workflows()}
+
+    if action == "workflow_get":
+        return {"workflow": workflows.get(data.get("id", "default"))}
+
+    if action == "workflow_edit":
+        from .providers import get_provider
+        return await workflows.edit(
+            data.get("id", "default"), data.get("request", ""), get_provider()
+        )
+
+    if action == "workflow_versions":
+        return {"versions": workflows.versions(data.get("id", "default"))}
+
+    if action == "workflow_rollback":
+        return workflows.rollback(data.get("id", "default"), data.get("version", ""))
+
+    if action == "workflow_save":
+        # Save a full workflow from the visual editor. Validates + versions the previous copy.
+        wf = data.get("workflow") or {}
+        wid = data.get("id") or wf.get("id", "default")
+        wf["id"] = wid
+        old = workflows.get(wid)
+        wf["version"] = (int(old.get("version", 1)) + 1) if old else int(wf.get("version", 1))
+        return workflows.commit(wid, wf)
+
+    if action == "workflow_create":
+        wid = (data.get("id") or "").strip()
+        if not wid:
+            return {"ok": False, "error": "id required"}
+        if workflows.get(wid) is not None:
+            return {"ok": False, "error": "workflow already exists"}
+        wf = {
+            "id": wid,
+            "version": 1,
+            "description": data.get("description", ""),
+            "nodes": [{"id": "step_1", "agent": "chat", "instruction": "", "depends_on": []}],
+        }
+        return workflows.commit(wid, wf)
+
+    # Admin-only image gallery (images generated during admin sessions).
+    if action == "gallery_admin":
+        return {"items": gallery.list_items(admin=True)}
+
+    if action == "gallery_delete":
+        return gallery.delete(data.get("id", ""))
+
+    if action == "subscribers_list":
+        items = subs.list_all()
+        return {"count": len(items), "subscribers": items}
+
+    raise HTTPException(status_code=400, detail=f"Unknown action: {action}")
+
+
+@app.post("/api/admin/chat")
+async def admin_chat(req: AdminChatRequest):
+    from fastapi import HTTPException
+    if req.password != config.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    personality_info = config.JARVIS_PERSONALITY.strip() or "(none — using default JARVIS personality)"
+
+    system = f"""You are J.A.R.V.I.S in ADMINISTRATOR MODE. You are speaking directly with your creator and administrator. Be direct, helpful, and fully transparent.
+
+CURRENT SYSTEM STATE
+- Provider : {config.PROVIDER}
+- Model    : {config.MODEL}
+- Personality override: {personality_info}
+- Available providers : {', '.join(config.PROVIDERS_LIST)}
+- Workflows : {', '.join(w['id'] for w in workflows.list_workflows()) or 'none'}
+
+When the administrator asks you to take an action, append a JSON action block AFTER your natural response (on its own line). Format:
+[[ADMIN_ACTION:{{"type":"action_name",...}}]]
+
+Available action types:
+  config_set       — {{"type":"config_set","provider":"groq","model":"llama-3.3-70b-versatile"}}
+  personality_set  — {{"type":"personality_set","text":"full personality text here"}}
+  personality_clear — {{"type":"personality_clear"}}
+  memory_clear     — {{"type":"memory_clear"}}
+  password_change  — {{"type":"password_change","password":"newpassword"}}
+  workflow_list    — {{"type":"workflow_list"}}
+  workflow_edit    — {{"type":"workflow_edit","id":"default","request":"add a fact-check step after research"}}
+
+Rules:
+- Only include [[ADMIN_ACTION:...]] when the administrator explicitly wants a change made
+- Be concise and informative. No filler.
+- You may describe what the action will do before including it
+- Session memory is stored client-side in the browser (not on the server)
+"""
+
+    history = [m.model_dump() for m in req.history]
+
+    async def gen():
+        from .providers import get_provider
+        provider = get_provider()
+        try:
+            msgs = history + [{"role": "user", "content": req.message}]
+            async for chunk in provider.stream(msgs, system=system, temperature=0.4, max_tokens=1024):
+                yield json.dumps({"type": "token", "text": chunk}) + "\n"
+        except Exception as e:
+            yield json.dumps({"type": "token", "text": f"⚠️ {e}"}) + "\n"
+        yield json.dumps({"type": "done"}) + "\n"
+
+    return StreamingResponse(gen(), media_type="application/x-ndjson")
+
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     history = [m.model_dump() for m in req.history]
 
     async def gen():
+        # Run a specific saved workflow when requested (named agent pipeline).
+        if req.workflow:
+            from .providers import get_provider
+            async for ev in workflows.run(
+                req.workflow, req.message, history, get_provider(),
+                user_profile=req.user_profile,
+            ):
+                yield json.dumps(ev) + "\n"
+            return
+
         async for ev in orchestrator.handle(
             req.message,
             history,
@@ -310,6 +646,7 @@ async def chat(req: ChatRequest):
             memory_context=req.memory_context,
             user_profile=req.user_profile,
             image_data=req.image_data,
+            session_personality=req.session_personality,
         ):
             yield json.dumps(ev) + "\n"
 

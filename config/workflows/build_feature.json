@@ -1,0 +1,19 @@
+{
+  "id": "build_feature",
+  "version": 1,
+  "description": "Research an approach, then implement it in code. Demonstrates a cross-capability pipeline (research -> coding).",
+  "nodes": [
+    {
+      "id": "research",
+      "agent": "research",
+      "instruction": "Research the best approach, libraries, and common pitfalls for the requested feature. Concise bullets.",
+      "depends_on": []
+    },
+    {
+      "id": "implement",
+      "agent": "coding",
+      "instruction": "Implement the feature in code using the research above. Include brief usage notes and keep it production-quality.",
+      "depends_on": ["research"]
+    }
+  ]
+}
