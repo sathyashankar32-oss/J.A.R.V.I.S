@@ -14,7 +14,7 @@ _ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(_ENV_PATH)
 
 # Which model backend to use: mock | ollama | groq | gemini | openai
-PROVIDER = os.getenv("PROVIDER", "ollama").strip() or "ollama"
+PROVIDER = (os.getenv("PROVIDER", "ollama").strip() or "ollama").lower()
 
 # Model name. The right default depends on the provider.
 DEFAULT_MODELS = {
