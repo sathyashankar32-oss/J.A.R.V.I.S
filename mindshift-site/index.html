@@ -433,7 +433,53 @@
         }
         function setCanvasBg(color) { document.getElementById('editor-canvas').style.background = color; }
         function clearCanvas() { document.getElementById('editor-canvas').innerHTML = ''; }
-        function saveVisionBoard() { alert('Vision board saved! (Tip: take a screenshot to keep it.)'); }
+        function saveVisionBoard() {
+            const canvas = document.getElementById('editor-canvas');
+            const html = canvas.innerHTML;
+            const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Vision Board</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 20px; background: #f8f9fa; }
+        .board-container { max-width: 800px; margin: 0 auto; }
+        .board-title { text-align: center; color: #2a5a6a; font-size: 2em; margin-bottom: 10px; font-weight: 700; }
+        .board-subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 0.95em; }
+        #vision-canvas { height: 600px; border: 2px dashed #ddd; border-radius: 10px; position: relative; overflow: hidden; background: #f9f9f9; margin-bottom: 20px; }
+        .canvas-element { position: absolute; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border-radius: 5px; }
+        .canvas-element.text { background: white; padding: 10px; border: 1px solid #ddd; }
+        .canvas-element.image { background-size: cover; background-position: center; }
+        .canvas-element.sticker { font-size: 2em; display: flex; align-items: center; justify-content: center; }
+        .footer { text-align: center; color: #999; font-size: 0.85em; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="board-container">
+        <h1 class="board-title">My Vision Board</h1>
+        <p class="board-subtitle">Created with Mindshift</p>
+        <div id="vision-canvas">
+            ${html}
+        </div>
+        <div class="footer">
+            <p>📱 Open this file in any browser anytime to view your vision board.</p>
+            <p>To edit: visit the Mindshift app at mindshift.yoursite.com</p>
+        </div>
+    </div>
+</body>
+</html>`;
+            const blob = new Blob([fullHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my-vision-board-' + new Date().toISOString().split('T')[0] + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('✓ Vision board downloaded!\n\nOpen it in any browser to view and share your board.');
+        }
 
         function makeDraggable(element) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
